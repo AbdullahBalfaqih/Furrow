@@ -1,0 +1,35 @@
+{
+  "network": "0G Chain (Galileo)",
+  "chainId": 16602,
+  "timestamp": "2026-08-18T15:23:47.720Z",
+  "deployer": "0x0388865e1daf2427De6111cf8548ed1871656180",
+  "storageIntegration": {
+    "provider": "0G Storage Network",
+    "storageCID": "0g://bafybeic2h4x92c11787066600tomatoes",
+    "metadataHash": "0x622dd5e5b7fe358c9da8724ab5728ccb72677c29d7cb184f606a21aac413da31",
+    "assessmentHash": "0x45ea9bbc3f0db3287f25e83bc6fed1a4b7a0c51c07c9f6fc9386b7af9937f716"
+  },
+  "contracts": {
+    "FurrowAccessControl": "0x7186Bef44014186F28da770F387F2D7D55835682",
+    "CropRegistry": "0x64Dc9caF5Cb9EAc069Ae8f5aaC6e980E3FD7917b",
+    "CropAssessment": "0x248d4E9fbC4Ea0b184A090da8a627027D5bF6a85",
+    "FurrowMarketplace": "0xb94Dc90f3f11d89b8D174B4b676B88255CE6e8B2"
+  },
+  "transactions": {
+    "registerCrop": {
+      "txHash": "0xa7f0b5623c51eeaaae5881811562a28128bcba772b877fd96723ccde0ff0279c",
+      "blockNumber": 50107276,
+      "explorerUrl": "https://chainscan-galileo.0g.ai/tx/0xa7f0b5623c51eeaaae5881811562a28128bcba772b877fd96723ccde0ff0279c"
+    },
+    "submitAssessment": {
+      "txHash": "0x9e5a8701646a34c6e9e59f6594fb4f608860fc082ef1d2139a56eb93091d1bac",
+      "blockNumber": 50107294,
+      "explorerUrl": "https://chainscan-galileo.0g.ai/tx/0x9e5a8701646a34c6e9e59f6594fb4f608860fc082ef1d2139a56eb93091d1bac"
+    },
+    "createListing": {
+      "txHash": "0xd48803c4a76e1e82cf9def3123e5a4251eefc67385d8b137d8695e9146456be4",
+      "blockNumber": 50107311,
+      "explorerUrl": "https://chainscan-galileo.0g.ai/tx/0xd48803c4a76e1e82cf9def3123e5a4251eefc67385d8b137d8695e9146456be4"
+    }
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "users": [
+    {
+      "walletAddress": "0x0388865e1daf2427De6111cf8548ed1871656180",
+      "role": "buyer",
+      "createdAt": 1787082396
+    }
+  ],
+  "crops": [
+    {
+      "id": 1,
+      "farmer": "0x0388865e1daf2427De6111cf8548ed1871656180",
+      "cropType": "Organic Premium Tomatoes",
+      "storageCID": "0g://bafybeic2h4x92c1tomatoes",
+      "metadataHash": "0x655a62af8d9c20be655a62af8d9c20be655a62af8d9c20be655a62af8d9c20be",
+      "harvestDate": 1786882459,
+      "createdAt": 1786882459,
+      "status": "Listed"
+    },
+    {
+      "id": 2,
+      "farmer": "0x0388865e1daf2427De6111cf8548ed1871656180",
+      "cropType": "Sukari Dates Premium",
+      "storageCID": "0g://bafybeic2h4x92c1dates",
+      "metadataHash": "0x777a62af8d9c20be655a62af8d9c20be655a62af8d9c20be655a62af8d9c20be",
+      "harvestDate": 1786623259,
+      "createdAt": 1786623259,
+      "status": "Listed"
+    }
+  ],
+  "assessments": [
+    {
+      "cropId": 1,
+      "qualityScore": 98,
+      "grade": "Grade A+ (98.6%)",
+      "estimatedValue": "$1,200 / Ton",
+      "modelVersion": "v1.4.2-vision",
+      "assessmentHash": "0x888a62af8d9c20be655a62af8d9c20be655a62af8d9c20be655a62af8d9c20be",
+      "timestamp": 1786968859,
+      "assessor": "0x0388865e1daf2427De6111cf8548ed1871656180"
+    }
+  ],
+  "listings": [
+    {
+      "listingId": 1,
+      "cropId": 1,
+      "farmer": "0x0388865e1daf2427De6111cf8548ed1871656180",
+      "minimumPrice": "1.0 0G",
+      "createdAt": 1786968859,
+      "expiresAt": 1787660059,
+      "active": true
+    }
+  ],
+  "offers": [
+    {
+      "offerId": 1,
+      "listingId": 1,
+      "buyer": "0x7186Bef44014186F28da770F387F2D7D55835682",
+      "amount": "1.58 0G",
+      "createdAt": 1787051659,
+      "active": true
+    }
+  ],
+  "securityLogs": [
+    {
+      "id": 1,
+      "timestamp": 1787055259386,
+      "ip": "127.0.0.1",
+      "action": "SYSTEM_INIT",
+      "details": "Database & Security Engine Initialized",
+      "status": "ALLOWED"
+    },
+    {
+      "id": 2,
+      "timestamp": 1787082396765,
+      "ip": "::1",
+      "action": "USER_PROFILE_UPDATED",
+      "details": "Wallet 0x0388865e1daf2427De6111cf8548ed1871656180 updated role to buyer",
+      "status": "ALLOWED"
+    }
+  ]
+}
