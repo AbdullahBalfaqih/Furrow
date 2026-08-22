@@ -14,12 +14,14 @@ Furrow Chain is a decentralized agriculture protocol designed to eliminate opaci
 
 ## Problem Statement
 
-| Industry Challenge | Impact on Stakeholders | Furrow Chain Solution |
+Traditional agricultural supply chains suffer from systemic inefficiencies, fraud, and payment friction that hurt producers and enterprise buyers globally:
+
+| Vulnerability Area | Core Industry Challenge | Root Cause & Systemic Impact |
 | :--- | :--- | :--- |
-| **Supply Chain Opacity** | Unverified harvest origin, fraudulent organic certificates | Immutable 0G Storage cryptographic provenance hashes |
-| **Inconsistent Crop Grading** | Dispute delays, manual inspection bias, pricing fraud | Automated 0G Computer Vision AI quality assessment models |
-| **Escrow & Payment Delays** | 2-4 week clearance times, high bank conversion fees | Automated 0G Chain smart contract escrows with instant payouts |
-| **Intermediary Exploitation** | Farmers receive under 40% of final retail value | Zero-commission direct farmer-to-buyer wholesale marketplace |
+| **Supply Chain Opacity** | Fraudulent origins and unverified certification labels | Intermediaries alter provenance data; buyers lack cryptographic proof of harvest origin and soil audit history |
+| **Crop Quality Discrepancies** | Inconsistent grading and subjective inspection bias | Manual visual inspection leads to dispute delays, rejected shipments, and financial losses for food exporters |
+| **Escrow & Settlement Delays** | 2 to 4 week international payment clearances | Traditional banking wire transfers and paper bills of lading delay liquidity and working capital for producers |
+| **Intermediary Exploitation** | Excessive broker markups and commission fees | Multi-layered brokers reduce smallholder farmer margins to under 40% of final retail commodity value |
 
 ---
 
