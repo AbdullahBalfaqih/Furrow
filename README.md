@@ -12,7 +12,7 @@ Furrow Chain is a decentralized agriculture protocol designed to eliminate opaci
 
 ---
 
-## Problem vs. Solution Matrix
+## Problem Statement
 
 | Industry Challenge | Impact on Stakeholders | Furrow Chain Solution |
 | :--- | :--- | :--- |
