@@ -177,7 +177,7 @@ export default function DashboardPage() {
               <div>
                 <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#111827', margin: 0, letterSpacing: '-0.02em' }}>
                   {activeTab === 'Overview' && 'Farmer Command Center'}
-                  {activeTab === 'AiAssistant' && '0G AI Crop Quality Inspector'}
+                  {(activeTab === 'AiAssistant' || activeTab === 'AI Assistant') && '0G AI Crop Quality Inspector'}
                   {activeTab === 'Harvest' && 'Crop Lots Inventory'}
                   {activeTab === 'CreateCrop' && 'Register New Crop Lot'}
                   {activeTab === 'Auctions' && 'Live Marketplace Auctions'}
@@ -185,7 +185,7 @@ export default function DashboardPage() {
                 </h1>
                 <p style={{ fontSize: '14px', color: '#6B7280', margin: '4px 0 0 0' }}>
                   {activeTab === 'Overview' && 'Real-time overview of certified crops, AI quality assessments, and active auctions.'}
-                  {activeTab === 'AiAssistant' && 'Upload crop images to run 0G AI Computer Vision quality classification.'}
+                  {(activeTab === 'AiAssistant' || activeTab === 'AI Assistant') && 'Upload crop images to run 0G AI Computer Vision quality classification.'}
                   {activeTab === 'Harvest' && 'Manage your agricultural crop inventory and 0G Storage hashes.'}
                   {activeTab === 'CreateCrop' && 'Upload photos to 0G Storage & mint onchain Crop Certificate.'}
                   {activeTab === 'Auctions' && 'List verified crops for bidding with automated smart contract settlement.'}
@@ -225,7 +225,7 @@ export default function DashboardPage() {
           {/* DYNAMIC TAB VIEW CONTENT RENDERER */}
           <div style={{ width: '100%' }}>
             {activeTab === 'Overview' && <OverviewView showToast={showToast} />}
-            {activeTab === 'AiAssistant' && <AiAssistantView />}
+            {(activeTab === 'AiAssistant' || activeTab === 'AI Assistant') && <AiAssistantView />}
             {activeTab === 'Harvest' && <HarvestView />}
             {activeTab === 'CreateCrop' && <CreateCropView showToast={showToast} />}
             {activeTab === 'Auctions' && <AuctionsView showToast={showToast} />}
