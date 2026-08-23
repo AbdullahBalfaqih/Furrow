@@ -1,0 +1,18 @@
+{
+  "network": "0G Mainnet (Aristotle)",
+  "chainId": 16661,
+  "timestamp": "2026-08-23T18:09:57.575Z",
+  "explorerBaseUrl": "https://chainscan.0g.ai",
+  "contracts": {
+    "FurrowAccessControl": "0x7186Bef44014186F28da770F387F2D7D55835682",
+    "CropRegistry": "0x64Dc9caF5Cb9EAc069Ae8f5aaC6e980E3FD7917b",
+    "CropAssessment": "0x248d4E9fbC4Ea0b184A090da8a627027D5bF6a85",
+    "FurrowMarketplace": "0xb94Dc90f3f11d89b8D174B4b676B88255CE6e8B2"
+  },
+  "explorerLinks": {
+    "FurrowAccessControl": "https://chainscan.0g.ai/address/0x7186Bef44014186F28da770F387F2D7D55835682",
+    "CropRegistry": "https://chainscan.0g.ai/address/0x64Dc9caF5Cb9EAc069Ae8f5aaC6e980E3FD7917b",
+    "CropAssessment": "https://chainscan.0g.ai/address/0x248d4E9fbC4Ea0b184A090da8a627027D5bF6a85",
+    "FurrowMarketplace": "https://chainscan.0g.ai/address/0xb94Dc90f3f11d89b8D174B4b676B88255CE6e8B2"
+  }
+}

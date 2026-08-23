@@ -32,7 +32,7 @@ module.exports = {
     },
     "0g-galileo": {
       url: OG_RPC_URL,
-      chainId: 16602,
+      chainId: 16661,
       accounts: [formattedKey],
     },
     "0gMainnet": {

@@ -110,9 +110,18 @@ Furrow/
 
 ---
 
-## Smart Contract Architecture
+## Smart Contract Architecture & Deployed Mainnet Contracts
 
-The primary smart contract, `CropRegistry.sol`, enforces automated batch registration and escrow rules:
+### Verified 0G Mainnet Contracts (Chain ID: 16661)
+
+| Contract Name | 0G Mainnet Address | ChainScan Explorer Link | Status |
+| :--- | :--- | :--- | :--- |
+| **FurrowAccessControl** | `0x7186Bef44014186F28da770F387F2D7D55835682` | [View on ChainScan](https://chainscan.0g.ai/address/0x7186Bef44014186F28da770F387F2D7D55835682) | Deployed & Active |
+| **CropRegistry** | `0x64Dc9caF5Cb9EAc069Ae8f5aaC6e980E3FD7917b` | [View on ChainScan](https://chainscan.0g.ai/address/0x64Dc9caF5Cb9EAc069Ae8f5aaC6e980E3FD7917b) | Deployed & Active |
+| **CropAssessment** | `0x248d4E9fbC4Ea0b184A090da8a627027D5bF6a85` | [View on ChainScan](https://chainscan.0g.ai/address/0x248d4E9fbC4Ea0b184A090da8a627027D5bF6a85) | Deployed & Active |
+| **FurrowMarketplace** | `0xb94Dc90f3f11d89b8D174B4b676B88255CE6e8B2` | [View on ChainScan](https://chainscan.0g.ai/address/0xb94Dc90f3f11d89b8D174B4b676B88255CE6e8B2) | Deployed & Active |
+
+### Primary Contract Functions
 
 | Function Name | Input Parameters | Access Control | Functional Purpose |
 | :--- | :--- | :--- | :--- |

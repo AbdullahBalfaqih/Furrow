@@ -4,6 +4,11 @@
       "walletAddress": "0x0388865e1daf2427De6111cf8548ed1871656180",
       "role": "buyer",
       "createdAt": 1787082396
+    },
+    {
+      "walletAddress": "0xEDD6E1C7462336cFC046d7b44cB8a769F789de3d",
+      "role": "merchant",
+      "createdAt": 1787415829
     }
   ],
   "crops": [
@@ -76,6 +81,14 @@
       "ip": "::1",
       "action": "USER_PROFILE_UPDATED",
       "details": "Wallet 0x0388865e1daf2427De6111cf8548ed1871656180 updated role to buyer",
+      "status": "ALLOWED"
+    },
+    {
+      "id": 3,
+      "timestamp": 1787415829717,
+      "ip": "::1",
+      "action": "USER_PROFILE_UPDATED",
+      "details": "Wallet 0xEDD6E1C7462336cFC046d7b44cB8a769F789de3d updated role to merchant",
       "status": "ALLOWED"
     }
   ]
