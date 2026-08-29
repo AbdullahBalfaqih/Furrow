@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
-import { useAppKit } from '@reown/appkit/react';
+import { useAppKit, useAppKitAccount } from '@reown/appkit/react';
 import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -13,10 +13,77 @@ import CreateCropView from '@/components/CreateCropView';
 import AuctionsView from '@/components/AuctionsView';
 import OrdersView from '@/components/OrdersView';
 
+function getCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+  return null;
+}
+
+function setSession(address: string | null) {
+  if (typeof window === 'undefined') return;
+  if (address) {
+    localStorage.setItem('furrow_connected_address', address.toLowerCase());
+    document.cookie = `furrow_session=${address.toLowerCase()}; path=/; max-age=2592000; SameSite=Lax`;
+  } else {
+    localStorage.removeItem('furrow_connected_address');
+    document.cookie = 'furrow_session=; path=/; max-age=0; SameSite=Lax';
+  }
+}
+
 export default function DashboardPage() {
-  const { address, isConnected } = useAccount();
+  const { address: wagmiAddress, isConnected: isWagmiConnected, status } = useAccount();
+  const { address: appKitAddress, isConnected: isAppKitConnected } = useAppKitAccount();
+  
+  const [injectedAddress, setInjectedAddress] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('furrow_connected_address') || getCookie('furrow_session');
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('furrow_connected_address') || getCookie('furrow_session');
+      if (saved) {
+        setInjectedAddress(saved);
+      }
+
+      const win = window as any;
+      const eth = win.phantom?.ethereum || win.ethereum;
+      if (eth) {
+        if (eth.selectedAddress) {
+          setInjectedAddress(eth.selectedAddress);
+          setSession(eth.selectedAddress);
+        }
+        if (typeof eth.on === 'function') {
+          eth.on('accountsChanged', (accounts: string[]) => {
+            if (accounts && accounts[0]) {
+              setInjectedAddress(accounts[0]);
+              setSession(accounts[0]);
+            } else {
+              setInjectedAddress(null);
+              setSession(null);
+            }
+          });
+        }
+      }
+    }
+  }, []);
+
+  const address = appKitAddress || wagmiAddress || injectedAddress;
+  const isConnected = Boolean(isAppKitConnected || isWagmiConnected || injectedAddress);
+
+  useEffect(() => {
+    if (address) {
+      setSession(address);
+    }
+  }, [address]);
+
   const { open } = useAppKit();
 
+  const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState('Overview');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -24,29 +91,164 @@ export default function DashboardPage() {
   const [checkingRole, setCheckingRole] = useState(true);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
+    // Safety timeout: Never hang in loading state for more than 1.2s
+    const safetyTimer = setTimeout(() => {
+      setCheckingRole(false);
+    }, 1200);
+
     if (!isConnected || !address) {
       setCheckingRole(false);
+      clearTimeout(safetyTimer);
       return;
     }
 
     fetch(`/api/users/profile?address=${address}`)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) return null;
+        return res.json();
+      })
       .then((data) => {
-        if (data.success && data.profile && data.profile.role) {
+        if (data && data.success && data.profile && data.profile.role) {
           setUserRole(data.profile.role);
         } else {
           const savedRole = localStorage.getItem(`furrow_role_${address.toLowerCase()}`);
           if (savedRole) setUserRole(savedRole as any);
         }
       })
-      .catch(() => {})
-      .finally(() => setCheckingRole(false));
-  }, [address, isConnected]);
+      .catch(() => {
+        const savedRole = localStorage.getItem(`furrow_role_${address.toLowerCase()}`);
+        if (savedRole) setUserRole(savedRole as any);
+      })
+      .finally(() => {
+        clearTimeout(safetyTimer);
+        setCheckingRole(false);
+      });
+
+    return () => clearTimeout(safetyTimer);
+  }, [address, isConnected, mounted]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 2500);
   };
+
+  // 1. Brief Loading state during initial client hydration
+  if (!mounted || (checkingRole && isConnected && !userRole)) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          backgroundColor: '#F5F7F8',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '24px',
+          gap: '16px',
+          fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
+        }}
+      >
+        <div
+          style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            border: '3px solid #E5E7EB',
+            borderTopColor: '#111827',
+            animation: 'spin 0.8s linear infinite',
+          }}
+        />
+        <style jsx>{`
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
+        <span style={{ fontSize: '14px', color: '#6B7280', fontWeight: 500 }}>Connecting Web3 Session...</span>
+      </div>
+    );
+  }
+
+  // 2. If user is NOT connected -> Block access to Seller Dashboard
+  if (!isConnected || !address) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          backgroundColor: '#F5F7F8',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '24px',
+          fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
+        }}
+      >
+        <div
+          style={{
+            background: '#FFFFFF',
+            border: '1px solid #E5E7EB',
+            borderRadius: '24px',
+            padding: '48px 36px',
+            maxWidth: '480px',
+            width: '100%',
+            textAlign: 'center',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.04)',
+          }}
+        >
+          <div
+            style={{
+              width: '60px',
+              height: '60px',
+              borderRadius: '20px',
+              background: '#E6E8DD',
+              color: '#111827',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px auto',
+              fontSize: '24px',
+            }}
+          >
+            🔌
+          </div>
+          <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#111827', margin: '0 0 10px 0' }}>
+            Wallet Required
+          </h2>
+          <p style={{ fontSize: '14px', color: '#6B7280', margin: '0 0 28px 0', lineHeight: 1.6 }}>
+            Please connect your Web3 Wallet to access the Farmer Command Center & Marketplace Dashboard.
+          </p>
+          <button
+            onClick={() => {
+              try {
+                if (open) open();
+              } catch (e) {}
+            }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: '#111827',
+              color: '#FFFFFF',
+              padding: '12px 28px',
+              borderRadius: '14px',
+              fontSize: '14px',
+              fontWeight: 600,
+              border: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
+            }}
+          >
+            Connect Wallet
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // If user is connected as BUYER -> Block access to Seller Dashboard
   if (!checkingRole && isConnected && userRole === 'buyer') {
@@ -149,6 +351,14 @@ export default function DashboardPage() {
               flex-direction: column !important;
               padding: 16px 12px 60px 12px !important;
               gap: 16px !important;
+              overflow-x: hidden !important;
+            }
+            .dashboard-page-title {
+              font-size: 22px !important;
+            }
+            .dashboard-action-btn {
+              width: 100% !important;
+              justify-content: center !important;
             }
           }
         `}</style>
@@ -175,7 +385,7 @@ export default function DashboardPage() {
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
               <div>
-                <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#111827', margin: 0, letterSpacing: '-0.02em' }}>
+                <h1 className="dashboard-page-title" style={{ fontSize: '28px', fontWeight: 800, color: '#111827', margin: 0, letterSpacing: '-0.02em' }}>
                   {activeTab === 'Overview' && 'Farmer Command Center'}
                   {(activeTab === 'AiAssistant' || activeTab === 'AI Assistant') && '0G AI Crop Quality Inspector'}
                   {activeTab === 'Harvest' && 'Crop Lots Inventory'}
@@ -195,6 +405,7 @@ export default function DashboardPage() {
 
               {activeTab !== 'CreateCrop' && (
                 <button
+                  className="dashboard-action-btn"
                   onClick={() => setActiveTab('CreateCrop')}
                   style={{
                     display: 'flex',

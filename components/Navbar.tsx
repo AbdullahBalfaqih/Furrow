@@ -3,15 +3,87 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useAccount } from 'wagmi';
-import { useAppKit } from '@reown/appkit/react';
+import { useAccount, useDisconnect } from 'wagmi';
+import { useAppKit, useAppKitAccount } from '@reown/appkit/react';
 import ReownWalletModal from '@/components/ReownWalletModal';
+
+function getCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+  return null;
+}
+
+function setSession(address: string | null) {
+  if (typeof window === 'undefined') return;
+  if (address) {
+    localStorage.setItem('furrow_connected_address', address.toLowerCase());
+    document.cookie = `furrow_session=${address.toLowerCase()}; path=/; max-age=2592000; SameSite=Lax`;
+  } else {
+    localStorage.removeItem('furrow_connected_address');
+    document.cookie = 'furrow_session=; path=/; max-age=0; SameSite=Lax';
+  }
+}
 
 export function Navbar() {
   const pathname = usePathname();
-  const { address, isConnected } = useAccount();
+  const { address: wagmiAddress, isConnected: isWagmiConnected } = useAccount();
+  const { address: appKitAddress, isConnected: isAppKitConnected } = useAppKitAccount();
+  const { disconnect } = useDisconnect();
+
+  const [injectedAddress, setInjectedAddress] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('furrow_connected_address') || getCookie('furrow_session');
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('furrow_connected_address') || getCookie('furrow_session');
+      if (saved) {
+        setInjectedAddress(saved);
+      }
+
+      const win = window as any;
+      const eth = win.phantom?.ethereum || win.ethereum;
+      if (eth) {
+        if (eth.selectedAddress) {
+          setInjectedAddress(eth.selectedAddress);
+          setSession(eth.selectedAddress);
+        }
+        if (typeof eth.on === 'function') {
+          eth.on('accountsChanged', (accounts: string[]) => {
+            if (accounts && accounts[0]) {
+              setInjectedAddress(accounts[0]);
+              setSession(accounts[0]);
+            } else {
+              setInjectedAddress(null);
+              setSession(null);
+            }
+          });
+        }
+      }
+    }
+  }, []);
+
+  const address = appKitAddress || wagmiAddress || injectedAddress;
+  const isConnected = Boolean(isAppKitConnected || isWagmiConnected || injectedAddress);
+
+  useEffect(() => {
+    if (address) {
+      setSession(address);
+    }
+  }, [address]);
+
+  const [mounted, setMounted] = useState(false);
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [userRole, setUserRole] = useState<'merchant' | 'buyer' | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   let appkit: any = null;
   try {
@@ -21,36 +93,60 @@ export function Navbar() {
   }
 
   useEffect(() => {
-    if (!isConnected || !address) {
+    if (!mounted || !isConnected || !address) {
       setUserRole(null);
       return;
     }
 
-    fetch(`/api/users/profile?address=${address}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.profile && data.profile.role) {
-          setUserRole(data.profile.role);
-        } else {
+    try {
+      fetch(`/api/users/profile?address=${address}`)
+        .then((res) => {
+          if (!res.ok) return null;
+          return res.json();
+        })
+        .then((data) => {
+          if (data && data.success && data.profile && data.profile.role) {
+            setUserRole(data.profile.role);
+          } else {
+            const savedRole = localStorage.getItem(`furrow_role_${address.toLowerCase()}`);
+            if (savedRole) setUserRole(savedRole as any);
+          }
+        })
+        .catch(() => {
           const savedRole = localStorage.getItem(`furrow_role_${address.toLowerCase()}`);
           if (savedRole) setUserRole(savedRole as any);
-        }
-      })
-      .catch(() => { });
-  }, [address, isConnected]);
+        });
+    } catch (e) {
+      const savedRole = localStorage.getItem(`furrow_role_${address.toLowerCase()}`);
+      if (savedRole) setUserRole(savedRole as any);
+    }
+  }, [address, isConnected, mounted]);
 
-  const handleConnectClick = () => {
+  const handleConnectClick = async () => {
+    // 1. IF ALREADY CONNECTED -> DISCONNECT WALLET IMMEDIATELY!
+    if (isConnected) {
+      try {
+        disconnect();
+      } catch (e) {}
+
+      setInjectedAddress(null);
+      setSession(null);
+      setUserRole(null);
+      return;
+    }
+
+    // 2. IF NOT CONNECTED -> OPEN FULL MULTI-WALLET MODAL (SHOWING ALL WALLETS)
     try {
       if (appkit && typeof appkit.open === 'function') {
-        appkit.open().catch(() => {
-          setIsWalletModalOpen(true);
-        });
-      } else {
-        setIsWalletModalOpen(true);
+        await appkit.open({ view: 'Connect' });
+        return;
       }
     } catch (err) {
-      setIsWalletModalOpen(true);
+      console.warn('Reown open fallback:', err);
     }
+
+    // Custom fallback modal showing all wallets (MetaMask, Phantom, Bitget, Coinbase, WalletConnect)
+    setIsWalletModalOpen(true);
   };
 
   return (
@@ -58,33 +154,46 @@ export function Navbar() {
       <nav
         className="navbar-container"
         style={{
-          width: '100%',
-          maxWidth: '720px',
+          width: 'fit-content',
+          minWidth: '580px',
+          maxWidth: '920px',
           height: '56px',
-          padding: '6px 12px',
-          borderRadius: '16px',
-          background: 'rgba(230, 232, 221, 0.94)',
+          padding: '6px 8px 6px 22px',
+          borderRadius: '9999px',
+          background: 'rgba(230, 232, 221, 0.96)',
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
           border: 'none',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: '8px',
+          gap: '16px',
           margin: '0 auto',
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
           transition: 'all 0.3s ease',
           boxSizing: 'border-box',
+          overflow: 'hidden',
         }}
       >
         {/* Brand Logo */}
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', flexShrink: 0 }}>
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', flexShrink: 0 }}>
           <img
-            src="https://api.builder.io/api/v1/image/assets/TEMP/a8346415ebb79aeba8a2105f48691cc2d71161da?width=256"
-            alt="Evermind Logo"
+            src="/logo.png"
+            alt="Furrow Logo"
             className="navbar-logo"
-            style={{ width: '124px', height: '26px', objectFit: 'contain' }}
+            style={{ width: '32px', height: '32px', objectFit: 'contain' }}
           />
+          <span
+            style={{
+              fontSize: '22px',
+              fontWeight: 700,
+              color: '#1A1A17',
+              letterSpacing: '-0.5px',
+              fontFamily: 'var(--font-inter), -apple-system, sans-serif',
+            }}
+          >
+            Furrow
+          </span>
         </Link>
 
         {/* Dynamic Navigation Links based on Role */}
@@ -130,8 +239,8 @@ export function Navbar() {
             Marketplace
           </Link>
 
-          {/* Show Dashboard ONLY for Merchants / Farmers */}
-          {(!userRole || userRole === 'merchant') && (
+          {/* Show Dashboard ONLY when Wallet is Connected and role is Merchant / Farmer */}
+          {mounted && isConnected && userRole !== 'buyer' && (
             <Link
               href="/dashboard"
               className="nav-link nav-link-item"
@@ -150,8 +259,8 @@ export function Navbar() {
             </Link>
           )}
 
-          {/* Show Profile ONLY for Buyers / Customers */}
-          {userRole === 'buyer' && (
+          {/* Show Profile ONLY when Wallet is Connected as Buyer / Customer */}
+          {mounted && isConnected && userRole === 'buyer' && (
             <Link
               href="/profile"
               className="nav-link nav-link-item"
@@ -177,7 +286,7 @@ export function Navbar() {
           className="connect-btn"
           style={{
             padding: '8px 18px',
-            borderRadius: '12px',
+            borderRadius: '9999px',
             background: '#1A1A17',
             color: '#F4F3EA',
             fontFamily: 'var(--font-inter)',
@@ -187,11 +296,12 @@ export function Navbar() {
             cursor: 'pointer',
             flexShrink: 0,
             whiteSpace: 'nowrap',
+            marginRight: '2px',
             boxShadow: '0 -1px 0 0 rgba(26, 26, 23, 0.08) inset, 0 1px 0 0 rgba(26, 26, 23, 0.04) inset',
             transition: 'transform 0.2s, background-color 0.2s',
           }}
         >
-          {isConnected && address
+          {mounted && isConnected && address
             ? `${address.substring(0, 6)}...${address.substring(address.length - 4)}`
             : 'Connect'}
         </button>

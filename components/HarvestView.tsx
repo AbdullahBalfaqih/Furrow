@@ -15,6 +15,9 @@ import {
   HiOutlineStar,
   HiOutlinePencilSquare,
   HiOutlineChevronDown,
+  HiOutlinePhoto,
+  HiOutlineArrowUpTray,
+  HiOutlineXMark,
 } from 'react-icons/hi2';
 
 interface HarvestViewProps {
@@ -22,7 +25,7 @@ interface HarvestViewProps {
   showToast?: (msg: string) => void;
 }
 
-// Custom Modern Dropdown Filter Component with smooth hover & right-aligned arrow
+// Custom Modern Dropdown Filter Component
 function CustomFilterDropdown({
   value,
   onChange,
@@ -49,7 +52,6 @@ function CustomFilterDropdown({
 
   return (
     <div ref={dropdownRef} style={{ position: 'relative', width: '100%' }}>
-      {/* Dropdown Trigger Button */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
@@ -85,7 +87,6 @@ function CustomFilterDropdown({
         />
       </button>
 
-      {/* Popover Dropdown Menu */}
       {isOpen && (
         <div
           style={{
@@ -102,7 +103,6 @@ function CustomFilterDropdown({
             display: 'flex',
             flexDirection: 'column',
             gap: '2px',
-            animation: 'fadeIn 0.15s ease-out',
             minWidth: '160px',
           }}
         >
@@ -128,12 +128,6 @@ function CustomFilterDropdown({
                   fontWeight: isSelected ? 500 : 400,
                   transition: 'background 0.1s ease',
                 }}
-                onMouseEnter={(e) => {
-                  if (!isSelected) e.currentTarget.style.background = '#F9FAFB';
-                }}
-                onMouseLeave={(e) => {
-                  if (!isSelected) e.currentTarget.style.background = 'transparent';
-                }}
               >
                 <span>{option.label}</span>
                 {isSelected && <HiOutlineCheck size={14} color="#111827" />}
@@ -146,13 +140,123 @@ function CustomFilterDropdown({
   );
 }
 
+// Initial Crop Batches Data
+const INITIAL_CROP_LOTS = [
+  {
+    id: 'LOT-9042',
+    name: 'Organic Premium Tomatoes',
+    category: 'Vegetables',
+    quantity: '5.0 Tons',
+    aiGrade: 'Grade A+ (98.6%)',
+    reservePrice: '$1,200',
+    currentBid: '$1,580',
+    bidsCount: 14,
+    status: 'Active Auction',
+    txHash: '0x7a8f...92c1',
+    image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=500&auto=format&fit=crop&q=80',
+  },
+  {
+    id: 'LOT-8812',
+    name: 'Sukari Dates Premium',
+    category: 'Dates',
+    quantity: '8.5 Tons',
+    aiGrade: 'Grade A+ (99.2%)',
+    reservePrice: '$4,500',
+    currentBid: '$6,200',
+    bidsCount: 22,
+    status: 'Active Auction',
+    txHash: '0x92f8...41a8',
+    image: 'https://images.unsplash.com/photo-1543332164-6e82f355badc?w=500&auto=format&fit=crop&q=80',
+  },
+  {
+    id: 'LOT-7734',
+    name: 'Pure Golden Wheat',
+    category: 'Grains',
+    quantity: '12.0 Tons',
+    aiGrade: 'Grade A (95.4%)',
+    reservePrice: '$3,200',
+    currentBid: '$4,100',
+    bidsCount: 9,
+    status: 'Active Auction',
+    txHash: '0x3c11...88b2',
+    image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=500&auto=format&fit=crop&q=80',
+  },
+  {
+    id: 'LOT-6621',
+    name: 'Jolani Green Olives',
+    category: 'Olives',
+    quantity: '3.2 Tons',
+    aiGrade: 'Grade A+ (97.8%)',
+    reservePrice: '$2,800',
+    currentBid: '$3,450',
+    bidsCount: 18,
+    status: 'Active Auction',
+    txHash: '0x5e90...11a4',
+    image: 'https://images.unsplash.com/photo-1541256942802-7b29531f0df8?w=500&auto=format&fit=crop&q=80',
+  },
+  {
+    id: 'LOT-5510',
+    name: 'Fresh Honeycrisp Apples',
+    category: 'Fruits',
+    quantity: '4.0 Tons',
+    aiGrade: 'Grade A (94.1%)',
+    reservePrice: '$1,800',
+    currentBid: '$2,250',
+    bidsCount: 11,
+    status: 'Active Auction',
+    txHash: '0x88d4...33c9',
+    image: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=500&auto=format&fit=crop&q=80',
+  },
+];
+
+// High-Res Crop Photo Presets for Easy 1-Click Changing
+const PRESET_CROP_IMAGES = [
+  { label: 'Tomatoes', url: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=500&auto=format&fit=crop&q=80' },
+  { label: 'Sukari Dates', url: 'https://images.unsplash.com/photo-1543332164-6e82f355badc?w=500&auto=format&fit=crop&q=80' },
+  { label: 'Golden Wheat', url: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=500&auto=format&fit=crop&q=80' },
+  { label: 'Green Olives', url: 'https://images.unsplash.com/photo-1541256942802-7b29531f0df8?w=500&auto=format&fit=crop&q=80' },
+  { label: 'Honeycrisp Apples', url: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=500&auto=format&fit=crop&q=80' },
+  { label: 'Fresh Strawberries', url: 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=500&auto=format&fit=crop&q=80' },
+  { label: 'Fresh Oranges', url: 'https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=500&auto=format&fit=crop&q=80' },
+  { label: 'Pomegranates', url: 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=500&auto=format&fit=crop&q=80' },
+  { label: 'Green Figs', url: 'https://images.unsplash.com/photo-1601004890684-d8cbf643f5f2?w=500&auto=format&fit=crop&q=80' },
+  { label: 'Coffee Beans', url: 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=500&auto=format&fit=crop&q=80' },
+];
+
 export default function HarvestView({ onAddNewBatch, showToast }: HarvestViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
 
-  // Single Row Selection State (No Checkboxes - Click Row to Select Exactly 1 Crop)
-  const [selectedCropId, setSelectedCropId] = useState<string>('LOT-9042');
+  // Dynamic Crop Lots State with LocalStorage Persistence
+  const [myCropLots, setMyCropLots] = useState<any[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('furrow_my_crops');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+    return INITIAL_CROP_LOTS;
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('furrow_my_crops', JSON.stringify(myCropLots));
+    }
+  }, [myCropLots]);
+
+  // Single Row Selection State
+  const [selectedCropId, setSelectedCropId] = useState<string>('LOT-8812');
+
+  // Edit Crop Product Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingCrop, setEditingCrop] = useState<any | null>(null);
+
+  const modalFileInputRef = useRef<HTMLInputElement>(null);
 
   const categoryOptions = [
     { label: 'All Categories', value: 'All' },
@@ -172,80 +276,11 @@ export default function HarvestView({ onAddNewBatch, showToast }: HarvestViewPro
 
   // Farmer Stats Overview Data
   const farmerStats = [
-    { label: 'Total batches', title: 'My Batches', count: '12', trend: '↑ 12% vs last month', icon: HiOutlineCube },
-    { label: 'Active auctions', title: 'Live Auctions', count: '5', trend: '↑ 8% vs last month', icon: HiOutlineCheckCircle },
-    { label: 'Inspection status', title: 'Pending Inspection', count: '1', trend: 'Processing', icon: HiOutlineClock },
+    { label: 'Total batches', title: 'My Batches', count: myCropLots.length.toString(), trend: '↑ 12% vs last month', icon: HiOutlineCube },
+    { label: 'Active auctions', title: 'Live Auctions', count: myCropLots.filter((c) => c.status === 'Active Auction').length.toString(), trend: '↑ 8% vs last month', icon: HiOutlineCheckCircle },
+    { label: 'Inspection status', title: 'Pending Inspection', count: myCropLots.filter((c) => c.status === 'Pending Inspection').length.toString(), trend: 'Processing', icon: HiOutlineClock },
     { label: 'Completed orders', title: 'Completed Sales', count: '6', trend: '↑ 15% vs last month', icon: HiOutlineCheck },
     { label: 'Auction margin', title: 'Avg. Premium', count: '+31.4%', trend: 'High Demand', icon: HiOutlineStar },
-  ];
-
-  // Farmer My Crops Data Table
-  const myCropLots = [
-    {
-      id: 'LOT-9042',
-      name: 'Organic Premium Tomatoes',
-      category: 'Vegetables',
-      quantity: '5.0 Tons',
-      aiGrade: 'Grade A+ (98.6%)',
-      reservePrice: '$1,200 / Ton',
-      currentBid: '$1,580 / Ton',
-      bidsCount: 14,
-      status: 'Active Auction',
-      txHash: '0x7a8f...92c1',
-      image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=150&auto=format&fit=crop&q=80',
-    },
-    {
-      id: 'LOT-8812',
-      name: 'Sukari Dates Premium',
-      category: 'Dates',
-      quantity: '8.5 Tons',
-      aiGrade: 'Grade A+ (99.2%)',
-      reservePrice: '$4,500 / Ton',
-      currentBid: '$6,200 / Ton',
-      bidsCount: 22,
-      status: 'Active Auction',
-      txHash: '0x92f8...41a8',
-      image: 'https://images.unsplash.com/photo-1559181567-c3190ca9959b?w=150&auto=format&fit=crop&q=80',
-    },
-    {
-      id: 'LOT-7734',
-      name: 'Pure Golden Wheat',
-      category: 'Grains',
-      quantity: '12.0 Tons',
-      aiGrade: 'Grade A (95.4%)',
-      reservePrice: '$3,200 / Ton',
-      currentBid: '$4,100 / Ton',
-      bidsCount: 9,
-      status: 'Active Auction',
-      txHash: '0x3c11...88b2',
-      image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=150&auto=format&fit=crop&q=80',
-    },
-    {
-      id: 'LOT-6621',
-      name: 'Jolani Green Olives',
-      category: 'Olives',
-      quantity: '3.2 Tons',
-      aiGrade: 'Grade A+ (97.8%)',
-      reservePrice: '$2,800 / Ton',
-      currentBid: '$3,450 / Ton',
-      bidsCount: 18,
-      status: 'Active Auction',
-      txHash: '0x5e90...11a4',
-      image: 'https://images.unsplash.com/photo-1541256942802-7b29531f0df8?w=150&auto=format&fit=crop&q=80',
-    },
-    {
-      id: 'LOT-5510',
-      name: 'Fresh Honeycrisp Apples',
-      category: 'Fruits',
-      quantity: '4.0 Tons',
-      aiGrade: 'Grade A (94.1%)',
-      reservePrice: '$1,800 / Ton',
-      currentBid: '$2,250 / Ton',
-      bidsCount: 11,
-      status: 'Active Auction',
-      txHash: '0x88d4...33c9',
-      image: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=150&auto=format&fit=crop&q=80',
-    },
   ];
 
   const filteredCrops = myCropLots.filter((item) => {
@@ -258,6 +293,33 @@ export default function HarvestView({ onAddNewBatch, showToast }: HarvestViewPro
   });
 
   const selectedCrop = myCropLots.find((c) => c.id === selectedCropId);
+
+  const openEditModal = (crop: any) => {
+    setEditingCrop({ ...crop });
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveCrop = () => {
+    if (!editingCrop) return;
+    setMyCropLots((prev) => prev.map((c) => (c.id === editingCrop.id ? editingCrop : c)));
+    setIsEditModalOpen(false);
+    showToast?.(`✔ Saved updates for ${editingCrop.name} (${editingCrop.id})`);
+  };
+
+  const handleFileUploadInModal = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && editingCrop) {
+      const reader = new FileReader();
+      reader.onload = (uploadEvent) => {
+        const result = uploadEvent.target?.result as string;
+        if (result) {
+          setEditingCrop((prev: any) => ({ ...prev, image: result }));
+          showToast?.('✔ Custom crop photo uploaded successfully');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   return (
     <div
@@ -307,7 +369,7 @@ export default function HarvestView({ onAddNewBatch, showToast }: HarvestViewPro
         </button>
       </div>
 
-      {/* CLEAN STAT CARDS WITH NATURAL SF PRO WEIGHT */}
+      {/* STAT CARDS */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px' }}>
         {farmerStats.map((st, i) => {
           const IconComp = st.icon;
@@ -327,7 +389,6 @@ export default function HarvestView({ onAddNewBatch, showToast }: HarvestViewPro
                 position: 'relative',
               }}
             >
-              {/* Top Header Row */}
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
                 <div>
                   <div style={{ fontSize: '12px', fontWeight: 400, color: '#6B7280' }}>{st.label}</div>
@@ -351,7 +412,6 @@ export default function HarvestView({ onAddNewBatch, showToast }: HarvestViewPro
                 </div>
               </div>
 
-              {/* Metric Value & Clean Trend Line with Outfit Numeric Font */}
               <div style={{ marginTop: '12px' }}>
                 <div className="stat-number" style={{ fontSize: '28px', fontWeight: 500, color: '#111827', lineHeight: 1 }}>
                   {st.count}
@@ -365,7 +425,7 @@ export default function HarvestView({ onAddNewBatch, showToast }: HarvestViewPro
         })}
       </div>
 
-      {/* SEARCH AND FILTER CONTROL BAR */}
+      {/* SEARCH AND FILTER BAR */}
       <div
         style={{
           background: '#FFFFFF',
@@ -379,7 +439,6 @@ export default function HarvestView({ onAddNewBatch, showToast }: HarvestViewPro
           alignItems: 'center',
         }}
       >
-        {/* Search Field */}
         <div
           style={{
             display: 'flex',
@@ -410,21 +469,18 @@ export default function HarvestView({ onAddNewBatch, showToast }: HarvestViewPro
           />
         </div>
 
-        {/* Sleek Custom Category Dropdown */}
         <CustomFilterDropdown
           value={selectedCategory}
           onChange={setSelectedCategory}
           options={categoryOptions}
         />
 
-        {/* Sleek Custom Status Dropdown */}
         <CustomFilterDropdown
           value={selectedStatus}
           onChange={setSelectedStatus}
           options={statusOptions}
         />
 
-        {/* Filter Trigger Button */}
         <button
           onClick={() => showToast?.(`Filtered ${filteredCrops.length} crop lots`)}
           style={{
@@ -446,7 +502,6 @@ export default function HarvestView({ onAddNewBatch, showToast }: HarvestViewPro
           <span>Filter</span>
         </button>
 
-        {/* Reset Button (Solid Black Button) */}
         <button
           onClick={() => {
             setSearchQuery('');
@@ -476,7 +531,7 @@ export default function HarvestView({ onAddNewBatch, showToast }: HarvestViewPro
         </button>
       </div>
 
-      {/* FARMER'S CROP MANAGEMENT TABLE (CLICK ANY ROW TO SELECT SINGLE ROW - NO CHECKBOXES) */}
+      {/* FARMER'S CROP MANAGEMENT TABLE */}
       <div
         style={{
           background: '#FFFFFF',
@@ -497,11 +552,12 @@ export default function HarvestView({ onAddNewBatch, showToast }: HarvestViewPro
               <th style={{ padding: '14px 16px', fontSize: '13px', fontWeight: 600, color: '#111827' }}>AI Quality Certificate</th>
               <th style={{ padding: '14px 16px', fontSize: '13px', fontWeight: 600, color: '#111827' }}>My Reserve Price</th>
               <th style={{ padding: '14px 16px', fontSize: '13px', fontWeight: 600, color: '#111827' }}>Top Buyer Bid</th>
-              <th style={{ padding: '14px 20px', fontSize: '13px', fontWeight: 600, color: '#111827', borderTopRightRadius: '10px', borderBottomRightRadius: '10px' }}>Blockchain Trace</th>
+              <th style={{ padding: '14px 16px', fontSize: '13px', fontWeight: 600, color: '#111827' }}>Blockchain Trace</th>
+              <th style={{ padding: '14px 20px', fontSize: '13px', fontWeight: 600, color: '#111827', textAlign: 'right', borderTopRightRadius: '10px', borderBottomRightRadius: '10px' }}>Action</th>
             </tr>
           </thead>
           <tbody>
-            {filteredCrops.map((crop) => {
+            {filteredCrops.map((crop: any) => {
               const isSelected = selectedCropId === crop.id;
               return (
                 <tr
@@ -514,19 +570,23 @@ export default function HarvestView({ onAddNewBatch, showToast }: HarvestViewPro
                     transition: 'background 0.15s ease',
                   }}
                 >
-                  {/* Crop Name, Batch ID & Quantity */}
+                  {/* Crop Name & Image */}
                   <td style={{ padding: '16px 20px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                      <img
-                        src={crop.image}
-                        alt={crop.name}
-                        style={{
-                          width: '46px',
-                          height: '46px',
-                          borderRadius: '10px',
-                          objectFit: 'cover',
-                        }}
-                      />
+                      <div style={{ position: 'relative' }}>
+                        <img
+                          src={crop.image}
+                          alt={crop.name}
+                          style={{
+                            width: '48px',
+                            height: '48px',
+                            borderRadius: '12px',
+                            objectFit: 'cover',
+                            border: '1px solid rgba(0,0,0,0.08)',
+                            boxShadow: '0 2px 6px rgba(0,0,0,0.06)',
+                          }}
+                        />
+                      </div>
                       <div>
                         <div style={{ fontSize: '14px', fontWeight: isSelected ? 500 : 400, color: '#111827' }}>
                           {crop.name}
@@ -538,7 +598,7 @@ export default function HarvestView({ onAddNewBatch, showToast }: HarvestViewPro
                     </div>
                   </td>
 
-                  {/* AI Quality Certificate */}
+                  {/* AI Certificate */}
                   <td style={{ padding: '16px' }}>
                     <div
                       style={{
@@ -559,7 +619,7 @@ export default function HarvestView({ onAddNewBatch, showToast }: HarvestViewPro
                     </div>
                   </td>
 
-                  {/* Farmer Minimum Reserve Price */}
+                  {/* Reserve Price */}
                   <td style={{ padding: '16px' }}>
                     <div className="stat-number" style={{ fontSize: '13px', color: '#111827', fontWeight: 500 }}>
                       {crop.reservePrice}
@@ -567,7 +627,7 @@ export default function HarvestView({ onAddNewBatch, showToast }: HarvestViewPro
                     <div style={{ fontSize: '11px', color: '#6B7280', fontWeight: 400 }}>Your floor price</div>
                   </td>
 
-                  {/* Highest Current Buyer Bid */}
+                  {/* Top Buyer Bid */}
                   <td style={{ padding: '16px' }}>
                     <div>
                       <div className="stat-number" style={{ fontSize: '14px', fontWeight: 500, color: '#111827' }}>{crop.currentBid}</div>
@@ -575,8 +635,8 @@ export default function HarvestView({ onAddNewBatch, showToast }: HarvestViewPro
                     </div>
                   </td>
 
-                  {/* Blockchain Smart Contract Tx Proof */}
-                  <td style={{ padding: '16px 20px' }}>
+                  {/* Tx Proof */}
+                  <td style={{ padding: '16px' }}>
                     <a
                       href="#"
                       onClick={(e) => {
@@ -599,13 +659,42 @@ export default function HarvestView({ onAddNewBatch, showToast }: HarvestViewPro
                       <span>{crop.txHash}</span>
                     </a>
                   </td>
+
+                  {/* Direct Row Edit Button */}
+                  <td style={{ padding: '16px 20px', textAlign: 'right' }}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openEditModal(crop);
+                      }}
+                      style={{
+                        height: '34px',
+                        padding: '0 14px',
+                        borderRadius: '8px',
+                        background: '#FFFFFF',
+                        color: '#111827',
+                        border: '1px solid #D1D5DB',
+                        fontSize: '12px',
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      <HiOutlinePencilSquare size={14} color="#111827" />
+                      <span>Edit Product</span>
+                    </button>
+                  </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
 
-        {/* SINGLE BOTTOM MANAGEMENT ACTION BAR (Clean Single Selection Control) */}
+        {/* BOTTOM ACTION BAR */}
         <div
           style={{
             display: 'flex',
@@ -634,9 +723,7 @@ export default function HarvestView({ onAddNewBatch, showToast }: HarvestViewPro
             <button
               disabled={!selectedCrop}
               onClick={() => {
-                if (selectedCrop) {
-                  showToast?.(`Managing batch: ${selectedCrop.name}`);
-                }
+                if (selectedCrop) openEditModal(selectedCrop);
               }}
               style={{
                 height: '38px',
@@ -660,6 +747,380 @@ export default function HarvestView({ onAddNewBatch, showToast }: HarvestViewPro
           </div>
         </div>
       </div>
+
+      {/* EDIT CROP PRODUCT MODAL */}
+      {isEditModalOpen && editingCrop && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 1000,
+            background: 'rgba(0, 0, 0, 0.45)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+          }}
+          onClick={() => setIsEditModalOpen(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#FFFFFF',
+              borderRadius: '24px',
+              width: '100%',
+              maxWidth: '560px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.2)',
+              padding: '28px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '20px',
+            }}
+          >
+            {/* Modal Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #F3F4F6', paddingBottom: '16px' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#111827', margin: 0 }}>
+                    Edit Product Details & Photo
+                  </h3>
+                  <span style={{ fontSize: '12px', background: '#F3F4F6', color: '#4B5563', padding: '2px 8px', borderRadius: '6px', fontWeight: 500 }}>
+                    {editingCrop.id}
+                  </span>
+                </div>
+                <p style={{ fontSize: '13px', color: '#6B7280', margin: '4px 0 0 0' }}>
+                  Change product image, title, category, quantity, and pricing floor
+                </p>
+              </div>
+
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                style={{ background: 'none', border: 'none', fontSize: '20px', color: '#9CA3AF', cursor: 'pointer', padding: '4px' }}
+              >
+                <HiOutlineXMark size={20} color="#6B7280" />
+              </button>
+            </div>
+
+            {/* PRODUCT IMAGE EDITOR SECTION */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: '#F9FAFB', padding: '18px', borderRadius: '18px', border: '1px solid #E5E7EB' }}>
+              <label style={{ fontSize: '13px', fontWeight: 600, color: '#111827', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <HiOutlinePhoto size={16} color="#111827" />
+                <span>Product Image</span>
+              </label>
+
+              {/* Current Image Preview & Upload Controls */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <img
+                  src={editingCrop.image}
+                  alt={editingCrop.name}
+                  style={{
+                    width: '94px',
+                    height: '94px',
+                    borderRadius: '14px',
+                    objectFit: 'cover',
+                    border: '2px solid #FFFFFF',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+                    flexShrink: 0,
+                  }}
+                />
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+                  {/* File Upload Input */}
+                  <input
+                    type="file"
+                    ref={modalFileInputRef}
+                    accept="image/*"
+                    onChange={handleFileUploadInModal}
+                    style={{ display: 'none' }}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => modalFileInputRef.current?.click()}
+                    style={{
+                      height: '38px',
+                      padding: '0 16px',
+                      borderRadius: '10px',
+                      background: '#111827',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      fontSize: '12px',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      width: 'fit-content',
+                    }}
+                  >
+                    <HiOutlineArrowUpTray size={15} color="#FFFFFF" />
+                    <span>Upload Custom Photo</span>
+                  </button>
+
+                  <div style={{ fontSize: '11px', color: '#6B7280' }}>Select an image file from your computer or paste a URL below:</div>
+                </div>
+              </div>
+
+              {/* Image Web URL Input */}
+              <input
+                type="text"
+                placeholder="https://images.unsplash.com/..."
+                value={editingCrop.image}
+                onChange={(e) => setEditingCrop({ ...editingCrop, image: e.target.value })}
+                style={{
+                  width: '100%',
+                  height: '38px',
+                  borderRadius: '10px',
+                  border: '1px solid #D1D5DB',
+                  padding: '0 12px',
+                  fontSize: '12px',
+                  color: '#111827',
+                  background: '#FFFFFF',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+
+              {/* 1-Click High-Res Crop Photo Presets */}
+              <div style={{ marginTop: '4px' }}>
+                <div style={{ fontSize: '11px', fontWeight: 600, color: '#4B5563', marginBottom: '8px' }}>
+                  Or select a high-res crop photo preset:
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
+                  {PRESET_CROP_IMAGES.map((preset, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => setEditingCrop({ ...editingCrop, image: preset.url })}
+                      style={{
+                        position: 'relative',
+                        borderRadius: '10px',
+                        overflow: 'hidden',
+                        cursor: 'pointer',
+                        border: editingCrop.image === preset.url ? '2px solid #111827' : '1px solid #E5E7EB',
+                        height: '56px',
+                        transition: 'transform 0.15s ease',
+                      }}
+                      title={preset.label}
+                    >
+                      <img src={preset.url} alt={preset.label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <div
+                        style={{
+                          position: 'absolute',
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          background: 'rgba(0,0,0,0.65)',
+                          color: '#FFF',
+                          fontSize: '9px',
+                          textAlign: 'center',
+                          padding: '2px 0',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {preset.label}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* FORM INPUT FIELDS GRID */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              {/* Product Name */}
+              <div style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 500, color: '#374151' }}>Crop Name / Title</label>
+                <input
+                  type="text"
+                  value={editingCrop.name}
+                  onChange={(e) => setEditingCrop({ ...editingCrop, name: e.target.value })}
+                  style={{
+                    height: '40px',
+                    borderRadius: '10px',
+                    border: '1px solid #D1D5DB',
+                    padding: '0 12px',
+                    fontSize: '13px',
+                    color: '#111827',
+                    outline: 'none',
+                  }}
+                />
+              </div>
+
+              {/* Category */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 500, color: '#374151' }}>Category</label>
+                <select
+                  value={editingCrop.category}
+                  onChange={(e) => setEditingCrop({ ...editingCrop, category: e.target.value })}
+                  style={{
+                    height: '40px',
+                    borderRadius: '10px',
+                    border: '1px solid #D1D5DB',
+                    padding: '0 12px',
+                    fontSize: '13px',
+                    color: '#111827',
+                    outline: 'none',
+                    background: '#FFFFFF',
+                  }}
+                >
+                  <option value="Vegetables">Vegetables</option>
+                  <option value="Dates">Dates</option>
+                  <option value="Grains">Grains</option>
+                  <option value="Olives">Olives</option>
+                  <option value="Fruits">Fruits</option>
+                </select>
+              </div>
+
+              {/* Quantity */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 500, color: '#374151' }}>Quantity</label>
+                <input
+                  type="text"
+                  value={editingCrop.quantity}
+                  onChange={(e) => setEditingCrop({ ...editingCrop, quantity: e.target.value })}
+                  style={{
+                    height: '40px',
+                    borderRadius: '10px',
+                    border: '1px solid #D1D5DB',
+                    padding: '0 12px',
+                    fontSize: '13px',
+                    color: '#111827',
+                    outline: 'none',
+                  }}
+                />
+              </div>
+
+              {/* Reserve Price */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 500, color: '#374151' }}>Reserve Floor Price</label>
+                <input
+                  type="text"
+                  value={editingCrop.reservePrice}
+                  onChange={(e) => setEditingCrop({ ...editingCrop, reservePrice: e.target.value })}
+                  style={{
+                    height: '40px',
+                    borderRadius: '10px',
+                    border: '1px solid #D1D5DB',
+                    padding: '0 12px',
+                    fontSize: '13px',
+                    color: '#111827',
+                    outline: 'none',
+                  }}
+                />
+              </div>
+
+              {/* Current Top Bid */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 500, color: '#374151' }}>Top Buyer Bid</label>
+                <input
+                  type="text"
+                  value={editingCrop.currentBid}
+                  onChange={(e) => setEditingCrop({ ...editingCrop, currentBid: e.target.value })}
+                  style={{
+                    height: '40px',
+                    borderRadius: '10px',
+                    border: '1px solid #D1D5DB',
+                    padding: '0 12px',
+                    fontSize: '13px',
+                    color: '#111827',
+                    outline: 'none',
+                  }}
+                />
+              </div>
+
+              {/* AI Grade */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 500, color: '#374151' }}>AI Quality Score</label>
+                <input
+                  type="text"
+                  value={editingCrop.aiGrade}
+                  onChange={(e) => setEditingCrop({ ...editingCrop, aiGrade: e.target.value })}
+                  style={{
+                    height: '40px',
+                    borderRadius: '10px',
+                    border: '1px solid #D1D5DB',
+                    padding: '0 12px',
+                    fontSize: '13px',
+                    color: '#111827',
+                    outline: 'none',
+                  }}
+                />
+              </div>
+
+              {/* Status */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 500, color: '#374151' }}>Status</label>
+                <select
+                  value={editingCrop.status}
+                  onChange={(e) => setEditingCrop({ ...editingCrop, status: e.target.value })}
+                  style={{
+                    height: '40px',
+                    borderRadius: '10px',
+                    border: '1px solid #D1D5DB',
+                    padding: '0 12px',
+                    fontSize: '13px',
+                    color: '#111827',
+                    outline: 'none',
+                    background: '#FFFFFF',
+                  }}
+                >
+                  <option value="Active Auction">Active Auction</option>
+                  <option value="Pending Inspection">Pending Inspection</option>
+                  <option value="Completed Sale">Completed Sale</option>
+                </select>
+              </div>
+            </div>
+
+            {/* MODAL FOOTER BUTTONS */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', borderTop: '1px solid #F3F4F6', paddingTop: '16px' }}>
+              <button
+                type="button"
+                onClick={() => setIsEditModalOpen(false)}
+                style={{
+                  height: '40px',
+                  padding: '0 18px',
+                  borderRadius: '10px',
+                  background: '#F3F4F6',
+                  color: '#374151',
+                  border: 'none',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSaveCrop}
+                style={{
+                  height: '40px',
+                  padding: '0 24px',
+                  borderRadius: '10px',
+                  background: '#111827',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                }}
+              >
+                Save Product Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

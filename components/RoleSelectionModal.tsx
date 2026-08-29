@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
+import { useAppKitAccount } from '@reown/appkit/react';
 import { useRouter } from 'next/navigation';
 import {
   HiOutlineBuildingStorefront,
@@ -10,7 +11,11 @@ import {
 } from 'react-icons/hi2';
 
 export function RoleSelectionModal() {
-  const { address, isConnected } = useAccount();
+  const { address: wagmiAddress, isConnected: isWagmiConnected } = useAccount();
+  const { address: appKitAddress, isConnected: isAppKitConnected } = useAppKitAccount();
+
+  const address = appKitAddress || wagmiAddress;
+  const isConnected = Boolean(isAppKitConnected || isWagmiConnected);
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);

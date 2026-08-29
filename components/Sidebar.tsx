@@ -150,13 +150,13 @@ export default function Sidebar({
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       {item.isCustomAi ? (
                         <AiSparkleIcon color={iconColor} />
                       ) : IconComponent ? (
                         <IconComponent size={20} color={iconColor} />
                       ) : null}
-                      {!isCollapsed && <span>{item.name}</span>}
+                      <span className={`sidebar-item-label ${isCollapsed ? 'collapsed-hide' : ''}`}>{item.name}</span>
                     </div>
 
                     {!isCollapsed && item.hasChevron && (
@@ -214,24 +214,40 @@ export default function Sidebar({
       </div>
 
       <style jsx>{`
+        .collapsed-hide {
+          display: ${isCollapsed ? 'none' : 'inline'};
+        }
         @media (max-width: 768px) {
+          .collapsed-hide {
+            display: inline !important;
+          }
           .dashboard-sidebar {
             width: 100% !important;
             min-height: auto !important;
             height: auto !important;
-            padding: 12px !important;
+            padding: 8px 10px !important;
             flex-direction: row !important;
             align-items: center !important;
             overflow-x: auto !important;
             white-space: nowrap !important;
             border-radius: 18px !important;
+            scrollbar-width: none !important;
+            -ms-overflow-style: none !important;
+            -webkit-overflow-scrolling: touch !important;
+          }
+          .dashboard-sidebar::-webkit-scrollbar {
+            display: none !important;
           }
           .sidebar-items-container {
             flex-direction: row !important;
-            gap: 12px !important;
+            gap: 8px !important;
             align-items: center !important;
             width: 100% !important;
             overflow-x: auto !important;
+            scrollbar-width: none !important;
+          }
+          .sidebar-items-container::-webkit-scrollbar {
+            display: none !important;
           }
           .sidebar-group {
             flex-direction: row !important;
@@ -253,6 +269,9 @@ export default function Sidebar({
           .sidebar-link {
             padding: 8px 14px !important;
             font-size: 13px !important;
+            flex-shrink: 0 !important;
+            border-radius: 12px !important;
+            justify-content: flex-start !important;
           }
         }
       `}</style>

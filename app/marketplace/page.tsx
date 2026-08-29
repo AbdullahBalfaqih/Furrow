@@ -104,18 +104,18 @@ export default function MarketplacePage() {
   // Agricultural Crop Categories
   const categories = ['All', 'Vegetables', 'Dates', 'Grains', 'Olives', 'Fruits'];
 
-  const items: MarketplaceItem[] = [
+  const DEFAULT_ITEMS: MarketplaceItem[] = [
     {
       id: 'LOT-9042',
-      title: 'Organic Premium Tomatoes Batch #9042',
+      title: 'Organic Premium Tomatoes',
       category: 'Vegetables',
       cropType: 'Tomatoes',
       location: 'Riyadh, KSA',
       quantity: '5.0 Tons',
       grade: 'Grade A+ (98.6%)',
       priceNum: 1580,
-      price: '$1,580 / Ton',
-      reservePrice: '$1,200 / Ton',
+      price: '$1,580',
+      reservePrice: '$1,200',
       bidsCount: 14,
       saleMode: 'Live Auction',
       author: '@alrasheed_farm',
@@ -125,33 +125,33 @@ export default function MarketplacePage() {
     },
     {
       id: 'LOT-8812',
-      title: 'Sukari Dates Premium Batch #8812',
+      title: 'Sukari Dates Premium',
       category: 'Dates',
       cropType: 'Dates',
       location: 'Al-Qassim, KSA',
       quantity: '8.5 Tons',
       grade: 'Grade A+ (99.2%)',
       priceNum: 6200,
-      price: '$6,200 / Ton',
-      reservePrice: '$4,500 / Ton',
+      price: '$6,200',
+      reservePrice: '$4,500',
       bidsCount: 22,
       saleMode: 'Live Auction',
       author: '@qassim_dates_co',
       description: 'First grade Sukari dates sourced directly from Al-Qassim palm orchards with 99.2% AI score.',
-      image: 'https://images.unsplash.com/photo-1559181567-c3190ca9959b?w=800&auto=format&fit=crop&q=80',
+      image: 'https://images.unsplash.com/photo-1543332164-6e82f355badc?w=800&auto=format&fit=crop&q=80',
       isEndingSoon: false,
     },
     {
       id: 'LOT-7734',
-      title: 'Pure Golden Wheat Batch #7734',
+      title: 'Pure Golden Wheat',
       category: 'Grains',
       cropType: 'Wheat',
       location: 'Dammam, KSA',
       quantity: '12.0 Tons',
       grade: 'Grade A (95.4%)',
       priceNum: 4100,
-      price: '$4,100 / Ton',
-      reservePrice: '$3,200 / Ton',
+      price: '$4,100',
+      reservePrice: '$3,200',
       bidsCount: 9,
       saleMode: 'Live Auction',
       author: '@golden_grains_sa',
@@ -161,15 +161,15 @@ export default function MarketplacePage() {
     },
     {
       id: 'LOT-6621',
-      title: 'Jolani Green Olives Batch #6621',
+      title: 'Jolani Green Olives',
       category: 'Olives',
       cropType: 'Olives',
       location: 'Jeddah, KSA',
       quantity: '3.2 Tons',
       grade: 'Grade A+ (97.8%)',
       priceNum: 3450,
-      price: '$3,450 / Ton',
-      reservePrice: '$2,800 / Ton',
+      price: '$3,450',
+      reservePrice: '$2,800',
       bidsCount: 18,
       saleMode: 'Live Auction',
       author: '@tabuk_harvest',
@@ -179,15 +179,15 @@ export default function MarketplacePage() {
     },
     {
       id: 'LOT-5510',
-      title: 'Fresh Honeycrisp Apples Batch #5510',
+      title: 'Fresh Honeycrisp Apples',
       category: 'Fruits',
       cropType: 'Apples',
       location: 'Riyadh, KSA',
       quantity: '4.0 Tons',
       grade: 'Grade A (94.1%)',
       priceNum: 2250,
-      price: '$2,250 / Ton',
-      reservePrice: '$1,800 / Ton',
+      price: '$2,250',
+      reservePrice: '$1,800',
       bidsCount: 11,
       saleMode: 'Direct Buy-Now',
       author: '@najd_orchards',
@@ -196,6 +196,82 @@ export default function MarketplacePage() {
       isEndingSoon: false,
     },
   ];
+
+  // Dynamic Marketplace Items State Synced with Farmer Edits in LocalStorage
+  const [items, setItems] = useState<MarketplaceItem[]>(DEFAULT_ITEMS);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const loadSavedCrops = () => {
+        const saved = localStorage.getItem('furrow_my_crops');
+        if (saved) {
+          try {
+            const farmerCrops = JSON.parse(saved);
+            setItems((prevItems) => {
+              // 1. Update existing default items with farmer modifications
+              const updatedItems = prevItems.map((item) => {
+                const updated = farmerCrops.find((c: any) => c.id === item.id);
+                if (updated) {
+                  const priceCleanNum = parseFloat(updated.currentBid?.replace(/[^0-9.]/g, '') || '0') || item.priceNum;
+                  const cleanTitle = updated.name.replace(/\s*Batch\s*#\d+/gi, '').replace(/#\d+/g, '').trim();
+                  const cleanPrice = updated.currentBid ? updated.currentBid.replace(/\s*\/\s*Ton/gi, '').trim() : item.price;
+                  const cleanReserve = updated.reservePrice ? updated.reservePrice.replace(/\s*\/\s*Ton/gi, '').trim() : item.reservePrice;
+                  return {
+                    ...item,
+                    title: cleanTitle,
+                    category: updated.category || item.category,
+                    quantity: updated.quantity || item.quantity,
+                    grade: updated.aiGrade || item.grade,
+                    price: cleanPrice,
+                    priceNum: priceCleanNum,
+                    reservePrice: cleanReserve,
+                    image: updated.image || item.image,
+                  };
+                }
+                return item;
+              });
+
+              // 2. Append any brand new crops created by farmer
+              const newCrops = farmerCrops.filter((c: any) => !updatedItems.some((it) => it.id === c.id));
+              const formattedNew: MarketplaceItem[] = newCrops.map((c: any) => {
+                const priceCleanNum = parseFloat(c.currentBid?.replace(/[^0-9.]/g, '') || '0') || 1500;
+                const cleanTitle = c.name.replace(/\s*Batch\s*#\d+/gi, '').replace(/#\d+/g, '').trim();
+                const cleanPrice = c.currentBid ? c.currentBid.replace(/\s*\/\s*Ton/gi, '').trim() : '$1,500';
+                const cleanReserve = c.reservePrice ? c.reservePrice.replace(/\s*\/\s*Ton/gi, '').trim() : '$1,200';
+                return {
+                  id: c.id,
+                  title: cleanTitle,
+                  category: c.category || 'Vegetables',
+                  cropType: c.category || 'Crops',
+                  location: 'Riyadh, KSA',
+                  quantity: c.quantity || '1.0 Ton',
+                  grade: c.aiGrade || 'Grade A+ (98%)',
+                  priceNum: priceCleanNum,
+                  price: cleanPrice,
+                  reservePrice: cleanReserve,
+                  bidsCount: c.bidsCount || 1,
+                  saleMode: 'Live Auction',
+                  author: '@farmer_direct',
+                  description: `Fresh ${c.name} registered directly from farm with AI grade score and 0G storage proof.`,
+                  image: c.image || 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=800&auto=format&fit=crop&q=80',
+                  isEndingSoon: false,
+                };
+              });
+
+              return [...updatedItems, ...formattedNew];
+            });
+          } catch (e) {
+            console.error('Error parsing furrow_my_crops in Marketplace:', e);
+          }
+        }
+      };
+
+      loadSavedCrops();
+      window.addEventListener('storage', loadSavedCrops);
+      return () => window.removeEventListener('storage', loadSavedCrops);
+    }
+  }, []);
+
 
   // Voice Search Handler
   const handleVoiceSearch = () => {
@@ -870,11 +946,11 @@ export default function MarketplacePage() {
                 transition: 'transform 0.15s ease, boxShadow 0.15s ease',
               }}
             >
-              {/* Product Image - FULL-BLEED EDGE-TO-EDGE SQUARE PHOTO */}
+              {/* Product Image - FULL-BLEED EDGE-TO-EDGE TALLER STRETCH PHOTO */}
               <div
                 style={{
                   width: '100%',
-                  aspectRatio: '1 / 1',
+                  height: '350px',
                   overflow: 'hidden',
                   background: '#F5F7F8',
                 }}
@@ -885,7 +961,7 @@ export default function MarketplacePage() {
                   style={{
                     width: '100%',
                     height: '100%',
-                    objectFit: 'cover',
+                    objectFit: 'fill',
                   }}
                 />
               </div>
@@ -981,7 +1057,7 @@ export default function MarketplacePage() {
                 style={{
                   width: '100%',
                   height: '100%',
-                  objectFit: 'cover',
+                  objectFit: 'fill',
                 }}
               />
             </div>

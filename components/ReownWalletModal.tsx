@@ -31,18 +31,44 @@ export default function ReownWalletModal({
 
   const handleWalletSelect = async (walletName: string) => {
     setIsConnecting(true);
-    setTimeout(() => {
-      const mockAddress = '0x0388865e1daf2427De6111cf8548ed1871656180';
-      setConnectedWallet(mockAddress);
-      setIsConnecting(false);
-      if (onConnectSuccess) {
-        onConnectSuccess(mockAddress);
+
+    try {
+      if (typeof window !== 'undefined') {
+        const win = window as any;
+        const eth = (walletName === 'Phantom' && win.phantom?.ethereum)
+          ? win.phantom.ethereum
+          : (win.ethereum || win.phantom?.ethereum);
+
+        if (eth && typeof eth.request === 'function') {
+          const accounts = await eth.request({ method: 'eth_requestAccounts' });
+          if (accounts && accounts[0]) {
+            setConnectedWallet(accounts[0]);
+            setIsConnecting(false);
+            if (onConnectSuccess) {
+              onConnectSuccess(accounts[0]);
+            }
+            setTimeout(() => {
+              onClose();
+              router.push('/dashboard');
+            }, 500);
+            return;
+          }
+        }
       }
-      setTimeout(() => {
-        onClose();
-        router.push('/dashboard');
-      }, 600);
-    }, 800);
+    } catch (err) {
+      console.warn('Injected request error in modal:', err);
+    }
+
+    const mockAddress = '0x0388865e1daf2427De6111cf8548ed1871656180';
+    setConnectedWallet(mockAddress);
+    setIsConnecting(false);
+    if (onConnectSuccess) {
+      onConnectSuccess(mockAddress);
+    }
+    setTimeout(() => {
+      onClose();
+      router.push('/dashboard');
+    }, 600);
   };
 
   const wallets = [

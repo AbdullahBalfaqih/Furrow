@@ -196,7 +196,9 @@ export default function AiAssistantView() {
     setSelectedImage(null);
     setIsLoading(true);
 
-    const openRouterKey = typeof window !== 'undefined' ? localStorage.getItem('OPENROUTER_API_KEY') : null;
+    const openRouterKey =
+      (typeof window !== 'undefined' ? localStorage.getItem('OPENROUTER_API_KEY') : null) ||
+      process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
     const geminiKey = typeof window !== 'undefined' ? localStorage.getItem('GEMINI_API_KEY') : null;
 
     let aiText = '';

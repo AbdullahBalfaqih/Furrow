@@ -161,12 +161,12 @@ export default function CreateCropView({ onBack, showToast }: CreateCropViewProp
   // Selling Strategy State (Live Auction VS Fixed Buy-It-Now Price)
   const [saleMode, setSaleMode] = useState<'auction' | 'fixed'>('auction');
 
-  // Pricing & Inventory State
-  const [price, setPrice] = useState('1580'); // Target / Buy-Now price
-  const [reservePrice, setReservePrice] = useState('1200'); // Auction reserve floor price
-  const [comparePrice, setComparePrice] = useState('1850'); // Compare-at market average
-  const [costPrice, setCostPrice] = useState('850'); // Farmer cost price
-  const [stockQuantity, setStockQuantity] = useState('5.0'); // Stock quantity (Tons)
+  // Pricing & Inventory State - Empty by default until filled by user or AI
+  const [price, setPrice] = useState(''); // Target / Buy-Now price
+  const [reservePrice, setReservePrice] = useState(''); // Auction reserve floor price
+  const [comparePrice, setComparePrice] = useState(''); // Compare-at market average
+  const [costPrice, setCostPrice] = useState(''); // Farmer cost price
+  const [stockQuantity, setStockQuantity] = useState(''); // Stock quantity (Tons)
 
   // Blockchain Smart Certificate Fee
   const mintingFee = 15.0; // $15 USD mint fee
@@ -212,28 +212,106 @@ export default function CreateCropView({ onBack, showToast }: CreateCropViewProp
     }
   };
 
-  const handleAiGenerate = (promptText?: string) => {
+  interface StudioMessage {
+    sender: 'user' | 'ai';
+    text: string;
+    timestamp: string;
+  }
+
+  const [studioMessages, setStudioMessages] = useState<StudioMessage[]>([]);
+
+  const [validationErrors, setValidationErrors] = useState<{ [key: string]: boolean }>({});
+
+  const handleAiGenerate = async (promptText?: string) => {
     const text = promptText || aiPrompt;
     if (!text.trim()) return;
 
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    setStudioMessages((prev) => [...prev, { sender: 'user', text, timestamp: time }]);
+    setAiPrompt('');
     setIsAiGenerating(true);
-    setTimeout(() => {
-      setCropName('Organic Premium Red Tomatoes');
-      setShortDesc('Freshly harvested Grade A+ organic tomatoes from Al-Qassim region. High purity score.');
-      setFullDesc(
-        'Harvested under strict organic standards in Al-Qassim. Inspected by AI Vision with 98.6% purity score. Moisture level 18.4%. Ready for immediate cold transport and competitive live bidding.'
-      );
-      setPrice('1580');
-      setReservePrice('1200');
-      setComparePrice('1850');
-      setCostPrice('850');
-      setStockQuantity('5.0');
-      if (images.length === 0) {
-        setImages(['https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400&auto=format&fit=crop&q=80']);
+
+    try {
+      const res = await fetch('/api/ai/studio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: text,
+          cropType: category,
+          mode: aiMode,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.cropName) setCropName(data.cropName);
+        if (data.shortDesc) setShortDesc(data.shortDesc);
+        if (data.fullDesc) setFullDesc(data.fullDesc);
+        if (data.price) setPrice(data.price);
+        if (data.reservePrice) setReservePrice(data.reservePrice);
+        if (data.comparePrice) setComparePrice(data.comparePrice);
+        if (data.costPrice) setCostPrice(data.costPrice);
+        if (data.stockQuantity) setStockQuantity(data.stockQuantity);
+        if (data.imageUrl) {
+          setImages([data.imageUrl]);
+        }
+
+        const reply = data.replyMessage || `Generated AI product response & studio asset for "${text}".`;
+        setStudioMessages((prev) => [...prev, { sender: 'ai', text: reply, timestamp: time }]);
+        showToast?.('AI Studio: Responded with product copy & studio assets!');
+      } else {
+        setCropName(text);
+        setStudioMessages((prev) => [
+          ...prev,
+          { sender: 'ai', text: `Processed query: "${text}". Form fields updated!`, timestamp: time },
+        ]);
+        showToast?.('AI Studio processed prompt!');
       }
+    } catch (err) {
+      console.error('AI Studio generation error:', err);
+      showToast?.('AI Studio processed prompt!');
+    } finally {
       setIsAiGenerating(false);
-      showToast?.('AI populated crop details, pricing & reserve floor price!');
-    }, 1200);
+    }
+  };
+
+  const handleCreateProduct = () => {
+    const errors: { [key: string]: boolean } = {};
+
+    if (!cropName.trim()) errors.cropName = true;
+    if (!price.trim() || isNaN(Number(price)) || Number(price) <= 0) errors.price = true;
+    if (!stockQuantity.trim() || isNaN(Number(stockQuantity)) || Number(stockQuantity) <= 0) errors.stockQuantity = true;
+    if (saleMode === 'auction' && (!reservePrice.trim() || isNaN(Number(reservePrice)) || Number(reservePrice) <= 0)) {
+      errors.reservePrice = true;
+    }
+    if (images.length === 0) errors.images = true;
+
+    setValidationErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      if (errors.cropName) {
+        showToast?.('⚠️ Please enter a Crop Name!');
+      } else if (errors.images) {
+        showToast?.('⚠️ Please upload or AI-generate at least one product image!');
+      } else if (errors.price) {
+        showToast?.('⚠️ Please enter a valid Selling Price!');
+      } else if (errors.reservePrice) {
+        showToast?.('⚠️ Please enter a valid Minimum Reserve Floor Price!');
+      } else if (errors.stockQuantity) {
+        showToast?.('⚠️ Please enter a valid Batch Stock Volume!');
+      } else {
+        showToast?.('⚠️ Please fill in all required fields highlighted in red!');
+      }
+      return;
+    }
+
+    // Success -> Create product
+    showToast?.(
+      saleMode === 'auction'
+        ? 'Harvest batch created & launched in live auction!'
+        : 'Harvest batch listed for direct Buy-It-Now sale!'
+    );
+    if (onBack) setTimeout(onBack, 1000);
   };
 
   const hasData = images.length > 0 || cropName.trim().length > 0;
@@ -282,14 +360,7 @@ export default function CreateCropView({ onBack, showToast }: CreateCropViewProp
           </button>
 
           <button
-            onClick={() => {
-              showToast?.(
-                saleMode === 'auction'
-                  ? 'Harvest batch created & launched in live auction!'
-                  : 'Harvest batch listed for direct Buy-It-Now sale!'
-              );
-              if (onBack) setTimeout(onBack, 1000);
-            }}
+            onClick={handleCreateProduct}
             style={{
               height: '40px',
               padding: '0 24px',
@@ -330,28 +401,76 @@ export default function CreateCropView({ onBack, showToast }: CreateCropViewProp
             }}
           >
             {/* HERO PROMPT BANNER */}
-            <div
-              style={{
-                borderRadius: '24px',
-                background: '#F5F7F8',
-                padding: '24px 24px 32px 24px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                textAlign: 'center',
-              }}
-            >
-              <div style={{ margin: '-10px 0 0 0' }}>
-                <GlassBlob3D />
+            {/* HERO PROMPT BANNER (FLOATING GLASS BLOB INITIAL STATE OR CHAT STREAM) */}
+            {studioMessages.length === 0 ? (
+              <div
+                style={{
+                  borderRadius: '24px',
+                  background: '#F5F7F8',
+                  padding: '24px 24px 32px 24px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  textAlign: 'center',
+                }}
+              >
+                <div style={{ margin: '-10px 0 0 0' }}>
+                  <GlassBlob3D />
+                </div>
+                <h3 style={{ fontSize: '15px', fontWeight: 500, color: '#111827', margin: 0 }}>
+                  Ask for anything about this product
+                </h3>
+                <p style={{ fontSize: '12px', color: '#6D6E6E', margin: '6px 0 0 0', maxWidth: '320px', lineHeight: 1.5, fontWeight: 400 }}>
+                  Write the details, cut a background out, or photograph it on a model. Say what you want in your own words.
+                </p>
               </div>
-              <h3 style={{ fontSize: '15px', fontWeight: 500, color: '#111827', margin: 0 }}>
-                Ask for anything about this product
-              </h3>
-              <p style={{ fontSize: '12px', color: '#6D6E6E', margin: '6px 0 0 0', maxWidth: '320px', lineHeight: 1.5, fontWeight: 400 }}>
-                Write the details, cut a background out, or photograph it on a model. Say what you want in your own words.
-              </p>
-            </div>
+            ) : (
+              <div
+                style={{
+                  borderRadius: '24px',
+                  background: '#F5F7F8',
+                  padding: '18px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                  minHeight: '180px',
+                  maxHeight: '340px',
+                  overflowY: 'auto',
+                  border: '1px solid #E5E7EB',
+                }}
+              >
+                {studioMessages.map((msg, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: msg.sender === 'user' ? 'flex-end' : 'flex-start',
+                      gap: '4px',
+                      width: '100%',
+                    }}
+                  >
+                    <div
+                      style={{
+                        padding: '10px 14px',
+                        borderRadius: msg.sender === 'user' ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
+                        background: msg.sender === 'user' ? '#111827' : '#FFFFFF',
+                        color: msg.sender === 'user' ? '#FFFFFF' : '#111827',
+                        border: msg.sender === 'user' ? 'none' : '1px solid #E5E7EB',
+                        fontSize: '13px',
+                        lineHeight: 1.55,
+                        maxWidth: '88%',
+                        boxShadow: msg.sender === 'user' ? 'none' : '0 2px 8px rgba(0, 0, 0, 0.02)',
+                      }}
+                    >
+                      {msg.text}
+                    </div>
+                    <span style={{ fontSize: '10px', color: '#9CA3AF', padding: '0 4px' }}>{msg.timestamp}</span>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* THUMBNAIL ADD ROW */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 4px' }}>
@@ -611,12 +730,17 @@ export default function CreateCropView({ onBack, showToast }: CreateCropViewProp
                 type="text"
                 placeholder="Enter product name"
                 value={cropName}
-                onChange={(e) => setCropName(e.target.value)}
+                onChange={(e) => {
+                  setCropName(e.target.value);
+                  if (validationErrors.cropName) {
+                    setValidationErrors((prev) => ({ ...prev, cropName: false }));
+                  }
+                }}
                 style={{
                   height: '42px',
                   borderRadius: '10px',
-                  border: '1px solid #E5E7EB',
-                  background: '#F5F7F8',
+                  border: validationErrors.cropName ? '1.5px solid #EF4444' : '1px solid #E5E7EB',
+                  background: validationErrors.cropName ? '#FEF2F2' : '#F5F7F8',
                   padding: '0 14px',
                   fontSize: '13px',
                   color: '#111827',
@@ -802,13 +926,18 @@ export default function CreateCropView({ onBack, showToast }: CreateCropViewProp
                   <input
                     type="text"
                     value={price}
-                    onChange={(e) => setPrice(e.target.value)}
+                    onChange={(e) => {
+                      setPrice(e.target.value);
+                      if (validationErrors.price) {
+                        setValidationErrors((prev) => ({ ...prev, price: false }));
+                      }
+                    }}
                     style={{
                       width: '100%',
                       height: '42px',
                       borderRadius: '10px',
-                      border: '1px solid #E5E7EB',
-                      background: '#F5F7F8',
+                      border: validationErrors.price ? '1.5px solid #EF4444' : '1px solid #E5E7EB',
+                      background: validationErrors.price ? '#FEF2F2' : '#F5F7F8',
                       padding: '0 14px 0 36px',
                       fontSize: '13px',
                       color: '#111827',
@@ -877,13 +1006,18 @@ export default function CreateCropView({ onBack, showToast }: CreateCropViewProp
                   <input
                     type="text"
                     value={stockQuantity}
-                    onChange={(e) => setStockQuantity(e.target.value)}
+                    onChange={(e) => {
+                      setStockQuantity(e.target.value);
+                      if (validationErrors.stockQuantity) {
+                        setValidationErrors((prev) => ({ ...prev, stockQuantity: false }));
+                      }
+                    }}
                     style={{
                       width: '100%',
                       height: '42px',
                       borderRadius: '10px',
-                      border: '1px solid #E5E7EB',
-                      background: '#F5F7F8',
+                      border: validationErrors.stockQuantity ? '1.5px solid #EF4444' : '1px solid #E5E7EB',
+                      background: validationErrors.stockQuantity ? '#FEF2F2' : '#F5F7F8',
                       padding: '0 14px 0 36px',
                       fontSize: '13px',
                       color: '#111827',
@@ -909,12 +1043,17 @@ export default function CreateCropView({ onBack, showToast }: CreateCropViewProp
                       type="text"
                       placeholder="e.g. 1200"
                       value={reservePrice}
-                      onChange={(e) => setReservePrice(e.target.value)}
+                      onChange={(e) => {
+                        setReservePrice(e.target.value);
+                        if (validationErrors.reservePrice) {
+                          setValidationErrors((prev) => ({ ...prev, reservePrice: false }));
+                        }
+                      }}
                       style={{
                         height: '44px',
                         borderRadius: '12px',
-                        border: '1px solid #E5E7EB',
-                        background: '#FFFFFF',
+                        border: validationErrors.reservePrice ? '1.5px solid #EF4444' : '1px solid #E5E7EB',
+                        background: validationErrors.reservePrice ? '#FEF2F2' : '#FFFFFF',
                         padding: '0 14px',
                         fontSize: '13px',
                         color: '#111827',
@@ -1042,98 +1181,28 @@ export default function CreateCropView({ onBack, showToast }: CreateCropViewProp
                 <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#111827', margin: '4px 0 0 0' }}>Nothing to show yet</h3>
               </div>
 
-              {/* 4 Tilted Graphic Cards Visual */}
+              {/* Single Faces Graphic Visual */}
               <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  padding: '20px 0',
+                  padding: '12px 0',
                   position: 'relative',
+                  width: '100%',
                 }}
               >
-                {/* Card 1: -9deg (Red Tomatoes on Dark Background) */}
-                <div
+                <img
+                  src="/faces.png"
+                  alt="Faces Studio Preview"
                   style={{
-                    width: '96px',
-                    height: '96px',
-                    transform: 'rotate(-9deg)',
-                    borderRadius: '16px',
-                    border: 'none',
-                    boxShadow: 'none',
-                    overflow: 'hidden',
-                    background: '#111827',
+                    width: '340px',
+                    maxWidth: '100%',
+                    height: 'auto',
+                    maxHeight: '120px',
+                    objectFit: 'contain',
                   }}
-                >
-                  <img
-                    src="https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400&auto=format&fit=crop&q=80"
-                    alt="Tomatoes on Dark Background"
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                </div>
-
-                {/* Card 2: -3deg (Avocado / Fresh Crop on Dark Background) */}
-                <div
-                  style={{
-                    width: '96px',
-                    height: '96px',
-                    transform: 'rotate(-3deg)',
-                    marginLeft: '-18px',
-                    borderRadius: '16px',
-                    border: 'none',
-                    boxShadow: 'none',
-                    overflow: 'hidden',
-                    background: '#111827',
-                  }}
-                >
-                  <img
-                    src="https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=400&auto=format&fit=crop&q=80"
-                    alt="Avocado on Dark Background"
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                </div>
-
-                {/* Card 3: 3deg (Golden Wheat Grains) */}
-                <div
-                  style={{
-                    width: '96px',
-                    height: '96px',
-                    transform: 'rotate(3deg)',
-                    marginLeft: '-18px',
-                    borderRadius: '16px',
-                    border: 'none',
-                    boxShadow: 'none',
-                    overflow: 'hidden',
-                    background: '#111827',
-                  }}
-                >
-                  <img
-                    src="https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=400&auto=format&fit=crop&q=80"
-                    alt="Wheat on Dark Background"
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                </div>
-
-                {/* Card 4: 9deg (Green Spinach bundle) */}
-                <div
-                  style={{
-                    width: '96px',
-                    height: '96px',
-                    transform: 'rotate(9deg)',
-                    marginLeft: '-18px',
-                    borderRadius: '16px',
-                    border: 'none',
-                    boxShadow: 'none',
-                    overflow: 'hidden',
-                    background: '#111827',
-                  }}
-                >
-                  <img
-                    src="https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=400&auto=format&fit=crop&q=80"
-                    alt="Spinach on Dark Background"
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                </div>
+                />
               </div>
 
               {/* Title & Prompt instructions */}
@@ -1154,12 +1223,30 @@ export default function CreateCropView({ onBack, showToast }: CreateCropViewProp
               </div>
 
               {/* Preview Image */}
-              <div style={{ position: 'relative', width: '100%', height: '220px', borderRadius: '16px', overflow: 'hidden' }}>
-                <img
-                  src={images[0] || 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400&auto=format&fit=crop&q=80'}
-                  alt="Live Preview"
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
+              <div style={{ position: 'relative', width: '100%', height: '220px', borderRadius: '16px', overflow: 'hidden', background: '#F3F4F6' }}>
+                {images.length > 0 ? (
+                  <img
+                    src={images[0]}
+                    alt="Live Preview"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      color: '#9CA3AF',
+                    }}
+                  >
+                    <HiOutlinePhoto size={40} color="#9CA3AF" />
+                    <span style={{ fontSize: '13px', fontWeight: 400 }}>No image uploaded yet</span>
+                  </div>
+                )}
                 <div
                   style={{
                     position: 'absolute',
@@ -1202,10 +1289,10 @@ export default function CreateCropView({ onBack, showToast }: CreateCropViewProp
               {/* Preview Information */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#111827', margin: 0 }}>
-                  {cropName || 'Crop Name Preview'}
+                  {cropName || 'Product Title'}
                 </h3>
                 <p style={{ fontSize: '13px', color: '#6B7280', margin: 0, fontWeight: 400 }}>
-                  {shortDesc || 'Short description preview will appear here as you type.'}
+                  {shortDesc || 'Product description will appear here as you type.'}
                 </p>
 
                 {/* Financial Breakdown */}
@@ -1215,16 +1302,16 @@ export default function CreateCropView({ onBack, showToast }: CreateCropViewProp
                       {saleMode === 'auction' ? 'Starting Price / Reserve' : 'Fixed Selling Price'}
                     </span>
                     <span className="stat-number" style={{ fontSize: '16px', fontWeight: 500, color: '#111827' }}>
-                      ${price || '0'} <span style={{ fontSize: '11px', color: '#6B7280', fontWeight: 400 }}>/ Ton</span>
+                      ${price || '0'} <span style={{ fontSize: '11px', color: '#6B7280', fontWeight 400 }}>/ Ton</span>
                     </span>
                   </div>
 
-                  {comparePrice && (
+                  {comparePrice ? (
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: '11px', color: '#6B7280', fontWeight: 400 }}>Market Compare Price</span>
                       <span className="stat-number" style={{ fontSize: '12px', color: '#9CA3AF', textDecoration: 'line-through' }}>${comparePrice} / Ton</span>
                     </div>
-                  )}
+                  ) : null}
 
                   {saleMode === 'auction' && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1235,7 +1322,8 @@ export default function CreateCropView({ onBack, showToast }: CreateCropViewProp
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 400 }}>Batch Stock Volume</span>
-                    <span className="stat-number" style={{ fontSize: '13px', fontWeight: 500, color: '#111827' }}>{stockQuantity || '0.0'} Tons</span>
+                    <span className="stat-number" style={{ fontSize: '13px', fontWeight: 500, color: '#111827' }}>{stockQuantity ? `${stockQuantity} Tons` : '0 Tons'}</span>
+                  </div>
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

@@ -70,7 +70,7 @@ export default function AuctionsView({ showToast }: AuctionsViewProps) {
       bidsCount: 22,
       timeLeft: '18h 45m 10s',
       isExpiringSoon: false,
-      image: 'https://images.unsplash.com/photo-1559181567-c3190ca9959b?w=500&auto=format&fit=crop&q=80',
+      image: 'https://images.unsplash.com/photo-1543332164-6e82f355badc?w=500&auto=format&fit=crop&q=80',
       bidsHistory: [
         { bidder: 'Saudi Gulf Supermarkets Co.', amount: '$6,200 / Ton', time: '14 mins ago', status: 'Highest Bidder' },
         { bidder: 'Al-Othaim Produce Procurement', amount: '$5,950 / Ton', time: '1 hour ago', status: 'Outbid' },

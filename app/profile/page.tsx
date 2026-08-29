@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useAccount } from 'wagmi';
-import { useAppKit } from '@reown/appkit/react';
+import { useAppKit, useAppKitAccount } from '@reown/appkit/react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import {
@@ -39,7 +39,12 @@ interface BuyerOrder {
 }
 
 export default function ProfilePage() {
-  const { address, isConnected } = useAccount();
+  const { address: wagmiAddress, isConnected: isWagmiConnected } = useAccount();
+  const { address: appKitAddress, isConnected: isAppKitConnected } = useAppKitAccount();
+
+  const address = appKitAddress || wagmiAddress;
+  const isConnected = Boolean(isAppKitConnected || isWagmiConnected);
+
   const { open } = useAppKit();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -89,7 +94,7 @@ export default function ProfilePage() {
       status: 'Shipped',
       paymentMethod: 'Blockchain Escrow',
       date: '2h ago',
-      image: 'https://images.unsplash.com/photo-1559181567-c3190ca9959b?w=800&auto=format&fit=crop&q=80',
+      image: 'https://images.unsplash.com/photo-1543332164-6e82f355badc?w=800&auto=format&fit=crop&q=80',
       trackingStep: 3,
     },
     {

@@ -10,20 +10,26 @@ import {
   HiOutlinePower,
 } from 'react-icons/hi2';
 
+import { useDisconnect } from 'wagmi';
+
 interface DashboardHeaderProps {
   onToggleSidebar?: () => void;
 }
 
 export default function DashboardHeader({ onToggleSidebar }: DashboardHeaderProps) {
   const router = useRouter();
+  const { disconnect } = useDisconnect();
 
   const handleDisconnect = () => {
-    // Navigate back to Home page on Disconnect
+    try {
+      disconnect();
+    } catch (e) {}
     router.push('/');
   };
 
   return (
     <header
+      className="dashboard-header-container"
       style={{
         width: '100%',
         height: '70px',
@@ -63,27 +69,39 @@ export default function DashboardHeader({ onToggleSidebar }: DashboardHeaderProp
           <HiOutlineBars3 size={20} color="#FFFFFF" />
         </button>
 
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
           <img
-            src="https://api.builder.io/api/v1/image/assets/TEMP/a8346415ebb79aeba8a2105f48691cc2d71161da?width=256"
-            alt="Evermind Logo"
-            style={{ height: '24px', objectFit: 'contain' }}
+            src="/logo.png"
+            alt="Furrow Logo"
+            style={{ height: '28px', width: '28px', objectFit: 'contain' }}
           />
+          <span
+            className="header-brand-title"
+            style={{
+              fontSize: '22px',
+              fontWeight: 700,
+              color: '#111827',
+              letterSpacing: '-0.5px',
+              fontFamily: 'var(--font-inter), -apple-system, sans-serif',
+            }}
+          >
+            Furrow
+          </span>
         </Link>
       </div>
 
-      {/* RIGHT CONTROLS & DISCONNECT BUTTON (ALL SQUARE ROUNDED RECTANGLES - 10px BORDER RADIUS) */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        {/* UNIFIED QUICK ACTIONS & DISCONNECT CONTAINER (SINGLE SOLID BLACK PILL) */}
+      {/* RIGHT CONTROLS & DISCONNECT BUTTON */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* UNIFIED QUICK ACTIONS & DISCONNECT CONTAINER */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            height: '40px',
+            height: '38px',
             background: '#111827',
             border: 'none',
             borderRadius: '12px',
-            padding: '0 6px',
+            padding: '0 4px',
             boxSizing: 'border-box',
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
             gap: '2px',
@@ -93,8 +111,8 @@ export default function DashboardHeader({ onToggleSidebar }: DashboardHeaderProp
           <button
             title="Toggle Theme"
             style={{
-              width: '34px',
-              height: '32px',
+              width: '32px',
+              height: '30px',
               borderRadius: '8px',
               border: 'none',
               background: 'transparent',
@@ -104,18 +122,18 @@ export default function DashboardHeader({ onToggleSidebar }: DashboardHeaderProp
               cursor: 'pointer',
             }}
           >
-            <HiOutlineMoon size={16} color="#FFFFFF" />
+            <HiOutlineMoon size={15} color="#FFFFFF" />
           </button>
 
           {/* Divider */}
-          <div style={{ width: '1px', height: '16px', background: 'rgba(255, 255, 255, 0.15)' }} />
+          <div style={{ width: '1px', height: '14px', background: 'rgba(255, 255, 255, 0.15)' }} />
 
           {/* Notification bell button */}
           <button
             title="Notifications"
             style={{
-              width: '34px',
-              height: '32px',
+              width: '32px',
+              height: '30px',
               borderRadius: '8px',
               border: 'none',
               background: 'transparent',
@@ -125,11 +143,11 @@ export default function DashboardHeader({ onToggleSidebar }: DashboardHeaderProp
               cursor: 'pointer',
             }}
           >
-            <HiOutlineBell size={16} color="#FFFFFF" />
+            <HiOutlineBell size={15} color="#FFFFFF" />
           </button>
 
           {/* Divider */}
-          <div style={{ width: '1px', height: '16px', background: 'rgba(255, 255, 255, 0.15)' }} />
+          <div style={{ width: '1px', height: '14px', background: 'rgba(255, 255, 255, 0.15)' }} />
 
           {/* Disconnect button merged inside container */}
           <button
@@ -137,9 +155,9 @@ export default function DashboardHeader({ onToggleSidebar }: DashboardHeaderProp
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              height: '32px',
-              padding: '0 14px 0 10px',
+              gap: '4px',
+              height: '30px',
+              padding: '0 8px',
               borderRadius: '8px',
               background: 'transparent',
               color: '#FFFFFF',
@@ -150,11 +168,29 @@ export default function DashboardHeader({ onToggleSidebar }: DashboardHeaderProp
               transition: 'all 0.2s',
             }}
           >
-            <HiOutlinePower size={17} color="#E6E8DD" style={{ marginLeft: '-4px', marginRight: '2px' }} />
-            <span>Disconnect</span>
+            <HiOutlinePower size={16} color="#E6E8DD" />
+            <span className="disconnect-label">Disconnect</span>
           </button>
         </div>
       </div>
+
+      <style jsx>{`
+        @media (max-width: 640px) {
+          .dashboard-header-container {
+            padding: 0 10px !important;
+            height: 56px !important;
+            margin-bottom: 14px !important;
+            border-radius: 16px !important;
+            box-sizing: border-box !important;
+          }
+          .header-brand-title {
+            font-size: 18px !important;
+          }
+          .disconnect-label {
+            display: none !important;
+          }
+        }
+      `}</style>
     </header>
   );
 }

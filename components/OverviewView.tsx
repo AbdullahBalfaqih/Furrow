@@ -15,6 +15,7 @@ export default function OverviewView({ showToast }: OverviewViewProps) {
   const CardNotch = () => (
     <>
       <svg
+        className="card-notch-svg"
         width="136"
         height="82"
         viewBox="0 0 136 82"
@@ -34,6 +35,7 @@ export default function OverviewView({ showToast }: OverviewViewProps) {
       </svg>
 
       <div
+        className="card-notch-actions"
         style={{
           position: 'absolute',
           top: '8px',
@@ -93,9 +95,10 @@ export default function OverviewView({ showToast }: OverviewViewProps) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%' }}>
       {/* ROW 1: TOTAL REVENUE (WIDE) + CUSTOMER GROWTH + WEEKLY VISITORS */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '24px' }}>
+      <div className="overview-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '24px' }}>
         {/* TOTAL REVENUE CARD (COL SPAN 6) */}
         <div
+          className="overview-card col-6"
           style={{
             gridColumn: 'span 6',
             borderRadius: '30px',
@@ -117,13 +120,13 @@ export default function OverviewView({ showToast }: OverviewViewProps) {
             <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#111827', margin: '4px 0 0 0' }}>Total Revenue</h3>
 
             {/* Big $84.3K with Sub Stats */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '24px', margin: '16px 0 8px 0' }}>
+            <div className="revenue-stat-row" style={{ display: 'flex', alignItems: 'center', gap: '24px', margin: '16px 0 8px 0' }}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px' }}>
                 <span style={{ fontSize: '28px', fontWeight: 400, color: '#6D6E6E' }}>$</span>
-                <span style={{ fontSize: '58px', fontWeight: 700, color: '#111827', letterSpacing: '-0.9px', lineHeight: '1' }}>84.3K</span>
+                <span className="revenue-big-stat" style={{ fontSize: '58px', fontWeight: 700, color: '#111827', letterSpacing: '-0.9px', lineHeight: '1' }}>84.3K</span>
               </div>
 
-              <div style={{ display: 'flex', gap: '20px', fontSize: '13px', color: '#6D6E6E' }}>
+              <div className="revenue-sub-stats" style={{ display: 'flex', gap: '20px', fontSize: '13px', color: '#6D6E6E' }}>
                 <div>
                   Orders
                   <div style={{ fontSize: '15px', fontWeight: 600, color: '#111827' }}>1,284</div>
@@ -185,6 +188,7 @@ export default function OverviewView({ showToast }: OverviewViewProps) {
 
         {/* CUSTOMER GROWTH CARD (COL SPAN 3) */}
         <div
+          className="overview-card col-3"
           style={{
             gridColumn: 'span 3',
             borderRadius: '30px',
@@ -255,7 +259,7 @@ export default function OverviewView({ showToast }: OverviewViewProps) {
         </div>
 
         {/* WEEKLY VISITORS CARD (COL SPAN 3) WITH SEARCH BAR DIRECTLY ABOVE IT */}
-        <div style={{ gridColumn: 'span 3', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <div className="overview-card col-3" style={{ gridColumn: 'span 3', display: 'flex', flexDirection: 'column', gap: '14px' }}>
           {/* SEARCH INPUT BOX MOVED ABOVE THIS CHART */}
           <div
             style={{
@@ -393,9 +397,10 @@ export default function OverviewView({ showToast }: OverviewViewProps) {
       </div>
 
       {/* ROW 2: TOTAL SALES + MONTHLY GOAL */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '24px' }}>
+      <div className="overview-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '24px' }}>
         {/* TOTAL SALES CARD (COL SPAN 6) */}
         <div
+          className="overview-card col-6"
           style={{
             gridColumn: 'span 6',
             borderRadius: '30px',
@@ -531,6 +536,7 @@ export default function OverviewView({ showToast }: OverviewViewProps) {
 
         {/* MONTHLY GOAL CARD (COL SPAN 6) */}
         <div
+          className="overview-card col-6"
           style={{
             gridColumn: 'span 6',
             borderRadius: '30px',
@@ -591,9 +597,10 @@ export default function OverviewView({ showToast }: OverviewViewProps) {
       </div>
 
       {/* ROW 3: RECENT ACTIVITIES + SALES BY REGION (WORLD MAP DEMO) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '24px' }}>
+      <div className="overview-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '24px' }}>
         {/* RECENT ACTIVITIES CARD (COL SPAN 6) */}
         <div
+          className="overview-card col-6"
           style={{
             gridColumn: 'span 6',
             borderRadius: '30px',
@@ -693,6 +700,7 @@ export default function OverviewView({ showToast }: OverviewViewProps) {
 
         {/* SALES BY REGION WORLD MAP DEMO CARD (COL SPAN 6) */}
         <div
+          className="overview-card col-6"
           style={{
             gridColumn: 'span 6',
             borderRadius: '30px',
@@ -880,6 +888,48 @@ export default function OverviewView({ showToast }: OverviewViewProps) {
           </button>
         </div>
       </div>
+
+      <style jsx>{`
+        @media (max-width: 1024px) {
+          .overview-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+          .col-6, .col-3, .col-12 {
+            grid-column: span 2 !important;
+          }
+        }
+        @media (max-width: 768px) {
+          .overview-grid {
+            grid-template-columns: 1fr !important;
+            gap: 16px !important;
+          }
+          .col-6, .col-3, .col-12 {
+            grid-column: span 1 !important;
+            min-height: auto !important;
+            padding: 20px 16px !important;
+            border-radius: 22px !important;
+          }
+          .revenue-stat-row {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 10px !important;
+            margin: 12px 0 8px 0 !important;
+          }
+          .revenue-sub-stats {
+            gap: 24px !important;
+          }
+          .revenue-big-stat {
+            font-size: 42px !important;
+          }
+          .card-notch-svg {
+            display: none !important;
+          }
+          .card-notch-actions {
+            top: 14px !important;
+            right: 14px !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

@@ -183,7 +183,7 @@ export default function OrdersView({ showToast }: OrdersViewProps) {
       status: 'In Escrow',
       paymentMethod: 'Blockchain Escrow',
       date: 'Just now',
-      image: 'https://images.unsplash.com/photo-1559181567-c3190ca9959b?w=800&auto=format&fit=crop&q=80',
+      image: 'https://images.unsplash.com/photo-1543332164-6e82f355badc?w=800&auto=format&fit=crop&q=80',
       trackingStep: 2,
     },
     {
@@ -219,7 +219,7 @@ export default function OrdersView({ showToast }: OrdersViewProps) {
       status: 'Completed',
       paymentMethod: 'Direct Wire',
       date: '1h ago',
-      image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80',
+      image: 'https://images.unsplash.com/photo-1559563458-527698bf5295?w=800&auto=format&fit=crop&q=80',
       trackingStep: 4,
     },
     {
@@ -587,11 +587,11 @@ export default function OrdersView({ showToast }: OrdersViewProps) {
                   }}
                 >
                   <div>
-                    <span style={{ fontSize: '11px', color: '#6D6E6E', display: 'block', fontWeight: 500 }}>إجمالي قيمة الصفقة</span>
+                    <span style={{ fontSize: '11px', color: '#6D6E6E', display: 'block', fontWeight: 500 }}>Total Deal Value</span>
                     <span style={{ fontSize: '16px', fontWeight: 600, color: '#111827' }}>{item.totalPrice}</span>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <span style={{ fontSize: '11px', color: '#6D6E6E', display: 'block', fontWeight: 500 }}>حجم الشحنة</span>
+                    <span style={{ fontSize: '11px', color: '#6D6E6E', display: 'block', fontWeight: 500 }}>Shipment Size</span>
                     <span style={{ fontSize: '14px', fontWeight: 500, color: '#111827', marginTop: '2px', display: 'block' }}>{item.quantity}</span>
                   </div>
                 </div>
@@ -599,8 +599,8 @@ export default function OrdersView({ showToast }: OrdersViewProps) {
                 {/* ESCROW TRACKING STEPPER */}
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#6D6E6E', marginBottom: '6px', fontWeight: 500 }}>
-                    <span>تتبع الصفقة واللوجستيات</span>
-                    <span style={{ fontWeight: 600, color: '#111827' }}>الخطوة {item.trackingStep} من 4</span>
+                    <span>Deal & Logistics Tracking</span>
+                    <span style={{ fontWeight: 600, color: '#111827' }}>Step {item.trackingStep} of 4</span>
                   </div>
                   <div style={{ display: 'flex', gap: '4px', height: '6px' }}>
                     {[1, 2, 3, 4].map((step) => (
