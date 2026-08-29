@@ -40,18 +40,33 @@ export default function ReownWalletModal({
           : (win.ethereum || win.phantom?.ethereum);
 
         if (eth && typeof eth.request === 'function') {
-          const accounts = await eth.request({ method: 'eth_requestAccounts' });
-          if (accounts && accounts[0]) {
-            setConnectedWallet(accounts[0]);
-            setIsConnecting(false);
-            if (onConnectSuccess) {
-              onConnectSuccess(accounts[0]);
+          try {
+            const accounts = await eth.request({ method: 'eth_requestAccounts' });
+            if (accounts && accounts[0]) {
+              setConnectedWallet(accounts[0]);
+              setIsConnecting(false);
+              if (onConnectSuccess) {
+                onConnectSuccess(accounts[0]);
+              }
+              setTimeout(() => {
+                onClose();
+                router.push('/dashboard');
+              }, 500);
+              return;
             }
-            setTimeout(() => {
-              onClose();
-              router.push('/dashboard');
-            }, 500);
-            return;
+          } catch (reqErr: any) {
+            console.warn('Metamask request pending or declined:', reqErr);
+            // If already authorized or accounts exist:
+            if (eth.selectedAddress) {
+              setConnectedWallet(eth.selectedAddress);
+              setIsConnecting(false);
+              if (onConnectSuccess) onConnectSuccess(eth.selectedAddress);
+              setTimeout(() => {
+                onClose();
+                router.push('/dashboard');
+              }, 500);
+              return;
+            }
           }
         }
       }
