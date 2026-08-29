@@ -392,7 +392,7 @@ export default function OrderDetailView({
                   price: '$31,000.00',
                   qty: '×1',
                   total: '$31,000.00',
-                  img: 'https://images.unsplash.com/photo-1543332164-6e82f355badc?w=200&auto=format&fit=crop&q=80',
+                  img: 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=800&auto=format&fit=crop&q=80',
                 },
                 {
                   title: 'Al-Jouf Extra Virgin Olive Oil Batch #940',

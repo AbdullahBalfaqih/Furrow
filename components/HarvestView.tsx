@@ -166,7 +166,7 @@ const INITIAL_CROP_LOTS = [
     bidsCount: 22,
     status: 'Active Auction',
     txHash: '0x92f8...41a8',
-    image: 'https://images.unsplash.com/photo-1543332164-6e82f355badc?w=500&auto=format&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=800&auto=format&fit=crop&q=80',
   },
   {
     id: 'LOT-7734',
@@ -212,7 +212,7 @@ const INITIAL_CROP_LOTS = [
 // High-Res Crop Photo Presets for Easy 1-Click Changing
 const PRESET_CROP_IMAGES = [
   { label: 'Tomatoes', url: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=500&auto=format&fit=crop&q=80' },
-  { label: 'Sukari Dates', url: 'https://images.unsplash.com/photo-1543332164-6e82f355badc?w=500&auto=format&fit=crop&q=80' },
+  { label: 'Sukari Dates', url: 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=800&auto=format&fit=crop&q=80' },
   { label: 'Golden Wheat', url: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=500&auto=format&fit=crop&q=80' },
   { label: 'Green Olives', url: 'https://images.unsplash.com/photo-1541256942802-7b29531f0df8?w=500&auto=format&fit=crop&q=80' },
   { label: 'Honeycrisp Apples', url: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=500&auto=format&fit=crop&q=80' },

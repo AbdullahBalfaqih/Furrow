@@ -94,7 +94,7 @@ export default function ProfilePage() {
       status: 'Shipped',
       paymentMethod: 'Blockchain Escrow',
       date: '2h ago',
-      image: 'https://images.unsplash.com/photo-1543332164-6e82f355badc?w=800&auto=format&fit=crop&q=80',
+      image: 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=800&auto=format&fit=crop&q=80',
       trackingStep: 3,
     },
     {

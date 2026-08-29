@@ -138,7 +138,7 @@ export default function MarketplacePage() {
       saleMode: 'Live Auction',
       author: '@qassim_dates_co',
       description: 'First grade Sukari dates sourced directly from Al-Qassim palm orchards with 99.2% AI score.',
-      image: 'https://images.unsplash.com/photo-1543332164-6e82f355badc?w=800&auto=format&fit=crop&q=80',
+      image: 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=800&auto=format&fit=crop&q=80',
       isEndingSoon: false,
     },
     {
@@ -174,7 +174,7 @@ export default function MarketplacePage() {
       saleMode: 'Live Auction',
       author: '@tabuk_harvest',
       description: 'Cold-pressed extra virgin green olives packed in stainless food-grade drums.',
-      image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&auto=format&fit=crop&q=80',
+      image: 'https://images.unsplash.com/photo-1541256942802-7b29531f0df8?w=800&auto=format&fit=crop&q=80',
       isEndingSoon: true,
     },
     {
@@ -202,19 +202,31 @@ export default function MarketplacePage() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      const sanitizeImg = (url: string | undefined, defaultUrl: string) => {
+        if (!url) return defaultUrl;
+        if (url.includes('photo-1543332164')) return 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=800&auto=format&fit=crop&q=80';
+        if (url.includes('photo-1540420773')) return 'https://images.unsplash.com/photo-1541256942802-7b29531f0df8?w=800&auto=format&fit=crop&q=80';
+        return url;
+      };
+
       const loadSavedCrops = () => {
-        const saved = localStorage.getItem('furrow_my_crops');
-        if (saved) {
+        const savedMy = localStorage.getItem('furrow_my_crops');
+        const savedUser = localStorage.getItem('furrow_user_crops');
+        const farmerCrops = [
+          ...(savedMy ? JSON.parse(savedMy) : []),
+          ...(savedUser ? JSON.parse(savedUser) : []),
+        ];
+
+        if (farmerCrops.length > 0) {
           try {
-            const farmerCrops = JSON.parse(saved);
             setItems((prevItems) => {
               // 1. Update existing default items with farmer modifications
               const updatedItems = prevItems.map((item) => {
-                const updated = farmerCrops.find((c: any) => c.id === item.id);
+                const updated = farmerCrops.find((c: any) => c.id === item.id || c.title === item.title);
                 if (updated) {
-                  const priceCleanNum = parseFloat(updated.currentBid?.replace(/[^0-9.]/g, '') || '0') || item.priceNum;
-                  const cleanTitle = updated.name.replace(/\s*Batch\s*#\d+/gi, '').replace(/#\d+/g, '').trim();
-                  const cleanPrice = updated.currentBid ? updated.currentBid.replace(/\s*\/\s*Ton/gi, '').trim() : item.price;
+                  const priceCleanNum = parseFloat(updated.currentBid?.replace(/[^0-9.]/g, '') || updated.priceNum || '0') || item.priceNum;
+                  const cleanTitle = (updated.name || updated.title || item.title).replace(/\s*Batch\s*#\d+/gi, '').replace(/#\d+/g, '').trim();
+                  const cleanPrice = updated.currentBid ? updated.currentBid.replace(/\s*\/\s*Ton/gi, '').trim() : (updated.price || item.price);
                   const cleanReserve = updated.reservePrice ? updated.reservePrice.replace(/\s*\/\s*Ton/gi, '').trim() : item.reservePrice;
                   return {
                     ...item,
@@ -225,43 +237,47 @@ export default function MarketplacePage() {
                     price: cleanPrice,
                     priceNum: priceCleanNum,
                     reservePrice: cleanReserve,
-                    image: updated.image || item.image,
+                    image: sanitizeImg(updated.image, item.image),
                   };
                 }
-                return item;
+                return {
+                  ...item,
+                  image: sanitizeImg(item.image, item.image),
+                };
               });
 
               // 2. Append any brand new crops created by farmer
-              const newCrops = farmerCrops.filter((c: any) => !updatedItems.some((it) => it.id === c.id));
+              const newCrops = farmerCrops.filter((c: any) => c.id && !updatedItems.some((it) => it.id === c.id));
               const formattedNew: MarketplaceItem[] = newCrops.map((c: any) => {
-                const priceCleanNum = parseFloat(c.currentBid?.replace(/[^0-9.]/g, '') || '0') || 1500;
-                const cleanTitle = c.name.replace(/\s*Batch\s*#\d+/gi, '').replace(/#\d+/g, '').trim();
-                const cleanPrice = c.currentBid ? c.currentBid.replace(/\s*\/\s*Ton/gi, '').trim() : '$1,500';
+                const priceCleanNum = parseFloat(c.currentBid?.replace(/[^0-9.]/g, '') || c.priceNum || '0') || 1500;
+                const cleanTitle = (c.name || c.title || 'Organic Harvest').replace(/\s*Batch\s*#\d+/gi, '').replace(/#\d+/g, '').trim();
+                const cleanPrice = c.currentBid ? c.currentBid.replace(/\s*\/\s*Ton/gi, '').trim() : (c.price || '$1,500');
                 const cleanReserve = c.reservePrice ? c.reservePrice.replace(/\s*\/\s*Ton/gi, '').trim() : '$1,200';
                 return {
                   id: c.id,
                   title: cleanTitle,
                   category: c.category || 'Vegetables',
                   cropType: c.category || 'Crops',
-                  location: 'Riyadh, KSA',
+                  location: c.location || 'Al-Qassim, KSA',
                   quantity: c.quantity || '1.0 Ton',
-                  grade: c.aiGrade || 'Grade A+ (98%)',
+                  grade: c.aiGrade || c.grade || 'Grade A+ (98%)',
                   priceNum: priceCleanNum,
                   price: cleanPrice,
                   reservePrice: cleanReserve,
-                  bidsCount: c.bidsCount || 1,
-                  saleMode: 'Live Auction',
-                  author: '@farmer_direct',
-                  description: `Fresh ${c.name} registered directly from farm with AI grade score and 0G storage proof.`,
-                  image: c.image || 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=800&auto=format&fit=crop&q=80',
+                  bidsCount: c.bidsCount || 0,
+                  saleMode: c.saleMode || 'Live Auction',
+                  author: '@my_farm',
+                  description: c.description || `Fresh ${cleanTitle} registered directly from farm on 0G Chain.`,
+                  image: sanitizeImg(c.image, 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=800&auto=format&fit=crop&q=80'),
                   isEndingSoon: false,
                 };
               });
 
-              return [...updatedItems, ...formattedNew];
+              // Prepend newly created user crops so they appear first!
+              return [...formattedNew, ...updatedItems];
             });
           } catch (e) {
-            console.error('Error parsing furrow_my_crops in Marketplace:', e);
+            console.error('Error parsing crops in Marketplace:', e);
           }
         }
       };

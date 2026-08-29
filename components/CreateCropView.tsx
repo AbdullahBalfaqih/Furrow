@@ -305,7 +305,32 @@ export default function CreateCropView({ onBack, showToast }: CreateCropViewProp
       return;
     }
 
-    // Success -> Create product
+    // Save created product to localStorage for instant sync across Marketplace & Dashboard
+    const newCrop = {
+      id: `LOT-${Math.floor(1000 + Math.random() * 9000)}`,
+      name: cropName,
+      title: cropName,
+      category: category,
+      quantity: `${stockQuantity} Tons`,
+      aiGrade: 'Grade A+ (99.2%)',
+      currentBid: price ? `$${Number(price).toLocaleString()} / Ton` : '$1,580 / Ton',
+      price: price ? `$${Number(price).toLocaleString()}` : '$1,580',
+      priceNum: Number(price) || 1580,
+      reservePrice: reservePrice ? `$${Number(reservePrice).toLocaleString()}` : '$1,200',
+      bidsCount: 0,
+      saleMode: saleMode === 'auction' ? 'Live Auction' : 'Direct Buy-Now',
+      image: images[0] || 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=800&auto=format&fit=crop&q=80',
+      description: shortDesc || fullDesc || 'Fresh organic crop lot certified on 0G Chain.',
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      const existingMy = JSON.parse(localStorage.getItem('furrow_my_crops') || '[]');
+      const existingUser = JSON.parse(localStorage.getItem('furrow_user_crops') || '[]');
+      localStorage.setItem('furrow_my_crops', JSON.stringify([newCrop, ...existingMy]));
+      localStorage.setItem('furrow_user_crops', JSON.stringify([newCrop, ...existingUser]));
+    } catch (e) {}
+
     showToast?.(
       saleMode === 'auction'
         ? 'Harvest batch created & launched in live auction!'
