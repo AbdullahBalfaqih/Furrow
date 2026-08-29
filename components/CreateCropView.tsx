@@ -1302,7 +1302,7 @@ export default function CreateCropView({ onBack, showToast }: CreateCropViewProp
                       {saleMode === 'auction' ? 'Starting Price / Reserve' : 'Fixed Selling Price'}
                     </span>
                     <span className="stat-number" style={{ fontSize: '16px', fontWeight: 500, color: '#111827' }}>
-                      ${price || '0'} <span style={{ fontSize: '11px', color: '#6B7280', fontWeight 400 }}>/ Ton</span>
+                      ${price || '0'} <span style={{ fontSize: '11px', color: '#6B7280', fontWeight: 400 }}>/ Ton</span>
                     </span>
                   </div>
 
@@ -1323,7 +1323,6 @@ export default function CreateCropView({ onBack, showToast }: CreateCropViewProp
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: 400 }}>Batch Stock Volume</span>
                     <span className="stat-number" style={{ fontSize: '13px', fontWeight: 500, color: '#111827' }}>{stockQuantity ? `${stockQuantity} Tons` : '0 Tons'}</span>
-                  </div>
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
