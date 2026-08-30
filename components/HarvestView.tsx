@@ -299,11 +299,52 @@ export default function HarvestView({ onAddNewBatch, showToast }: HarvestViewPro
     setIsEditModalOpen(true);
   };
 
-  const handleSaveCrop = () => {
+  const handleSaveCrop = async () => {
     if (!editingCrop) return;
-    setMyCropLots((prev) => prev.map((c) => (c.id === editingCrop.id ? editingCrop : c)));
+    const updated = myCropLots.map((c) => (c.id === editingCrop.id ? editingCrop : c));
+    setMyCropLots(updated);
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('furrow_my_crops', JSON.stringify(updated));
+      localStorage.setItem('furrow_user_crops', JSON.stringify(updated));
+    }
+
+    try {
+      await fetch('/api/crops', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cropType: editingCrop.category || 'Vegetables',
+          farmerAddress: '0x0388865e1daf2427De6111cf8548ed1871656180',
+          harvestDate: new Date().toISOString().split('T')[0],
+          storageCID: `0g-${editingCrop.id.toLowerCase()}-cid`,
+          metadataHash: `0xmeta-${editingCrop.id.toLowerCase()}`,
+        }),
+      });
+    } catch (e) {}
+
     setIsEditModalOpen(false);
-    showToast?.(`✔ Saved updates for ${editingCrop.name} (${editingCrop.id})`);
+    showToast?.(`✔ Saved product updates for ${editingCrop.name} (${editingCrop.id})`);
+  };
+
+  const handleDeleteCrop = (id: string) => {
+    const updated = myCropLots.filter((c) => c.id !== id);
+    setMyCropLots(updated);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('furrow_my_crops', JSON.stringify(updated));
+      localStorage.setItem('furrow_user_crops', JSON.stringify(updated));
+    }
+    setIsEditModalOpen(false);
+    showToast?.(`🗑️ Product ${id} removed successfully`);
+  };
+
+  const handleClearSampleCrops = () => {
+    setMyCropLots([]);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('furrow_my_crops', JSON.stringify([]));
+      localStorage.setItem('furrow_user_crops', JSON.stringify([]));
+    }
+    showToast?.('🧹 Cleared all default products! You now have a clean slate to add your own.');
   };
 
   const handleFileUploadInModal = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -342,31 +383,54 @@ export default function HarvestView({ onAddNewBatch, showToast }: HarvestViewPro
           </p>
         </div>
 
-        {/* ADD NEW CROP LOT BUTTON */}
-        <button
-          onClick={() => {
-            if (onAddNewBatch) onAddNewBatch();
-            showToast?.('Opening Create New Harvest Batch view...');
-          }}
-          style={{
-            height: '42px',
-            padding: '0 22px',
-            borderRadius: '10px',
-            background: '#111827',
-            color: '#FFFFFF',
-            border: 'none',
-            fontSize: '13px',
-            fontWeight: 500,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            cursor: 'pointer',
-            boxShadow: 'none',
-          }}
-        >
-          <HiOutlinePlus size={18} color="#FFFFFF" />
-          <span>New Harvest Batch</span>
-        </button>
+        {/* ACTION BUTTONS */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            onClick={handleClearSampleCrops}
+            style={{
+              height: '42px',
+              padding: '0 16px',
+              borderRadius: '10px',
+              background: '#F3F4F6',
+              color: '#4B5563',
+              border: '1px solid #E5E7EB',
+              fontSize: '13px',
+              fontWeight: 500,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              cursor: 'pointer',
+            }}
+          >
+            <span>Clear Sample Products</span>
+          </button>
+
+          {/* ADD NEW CROP LOT BUTTON */}
+          <button
+            onClick={() => {
+              if (onAddNewBatch) onAddNewBatch();
+              showToast?.('Opening Create New Harvest Batch view...');
+            }}
+            style={{
+              height: '42px',
+              padding: '0 22px',
+              borderRadius: '10px',
+              background: '#111827',
+              color: '#FFFFFF',
+              border: 'none',
+              fontSize: '13px',
+              fontWeight: 500,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              cursor: 'pointer',
+              boxShadow: 'none',
+            }}
+          >
+            <HiOutlinePlus size={18} color="#FFFFFF" />
+            <span>New Harvest Batch</span>
+          </button>
+        </div>
       </div>
 
       {/* STAT CARDS */}
@@ -1080,43 +1144,63 @@ export default function HarvestView({ onAddNewBatch, showToast }: HarvestViewPro
             </div>
 
             {/* MODAL FOOTER BUTTONS */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', borderTop: '1px solid #F3F4F6', paddingTop: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #F3F4F6', paddingTop: '16px' }}>
               <button
                 type="button"
-                onClick={() => setIsEditModalOpen(false)}
+                onClick={() => handleDeleteCrop(editingCrop.id)}
                 style={{
                   height: '40px',
-                  padding: '0 18px',
+                  padding: '0 16px',
                   borderRadius: '10px',
-                  background: '#F3F4F6',
-                  color: '#374151',
-                  border: 'none',
+                  background: '#FEF2F2',
+                  color: '#EF4444',
+                  border: '1px solid #FCA5A5',
                   fontSize: '13px',
                   fontWeight: 500,
                   cursor: 'pointer',
                 }}
               >
-                Cancel
+                Delete Product
               </button>
 
-              <button
-                type="button"
-                onClick={handleSaveCrop}
-                style={{
-                  height: '40px',
-                  padding: '0 24px',
-                  borderRadius: '10px',
-                  background: '#111827',
-                  color: '#FFFFFF',
-                  border: 'none',
-                  fontSize: '13px',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-                }}
-              >
-                Save Product Changes
-              </button>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  style={{
+                    height: '40px',
+                    padding: '0 18px',
+                    borderRadius: '10px',
+                    background: '#F3F4F6',
+                    color: '#374151',
+                    border: 'none',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSaveCrop}
+                  style={{
+                    height: '40px',
+                    padding: '0 24px',
+                    borderRadius: '10px',
+                    background: '#111827',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                  }}
+                >
+                  Save Product Changes
+                </button>
+              </div>
             </div>
           </div>
         </div>
