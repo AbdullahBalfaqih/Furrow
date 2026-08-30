@@ -9,11 +9,22 @@ import {
 } from '@/lib/security/sanitize';
 import { uploadToZeroGStorage } from '@/lib/og-storage';
 import { db } from '@/lib/db';
+import { supabase } from '@/lib/db/cloud';
 
 export async function GET(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
   const rateLimitError = enforceRateLimit(ip, { limit: 100, windowMs: 60 * 1000 });
   if (rateLimitError) return rateLimitError;
+
+  try {
+    const { data: cloudCrops, error } = await supabase.from('crops').select('*');
+    if (!error && cloudCrops && cloudCrops.length > 0) {
+      const response = NextResponse.json({ success: true, count: cloudCrops.length, data: cloudCrops });
+      return applySecurityHeaders(response);
+    }
+  } catch (e) {
+    console.warn('Supabase GET crops fallback to local DB:', e);
+  }
 
   const crops = db.getCrops();
   const response = NextResponse.json({ success: true, count: crops.length, data: crops });

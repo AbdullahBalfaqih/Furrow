@@ -228,20 +228,73 @@ export default function HarvestView({ onAddNewBatch, showToast }: HarvestViewPro
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
 
-  // Dynamic Crop Lots State with LocalStorage Persistence
+  // Dynamic Crop Lots State with Supabase Cloud DB & LocalStorage Persistence
   const [myCropLots, setMyCropLots] = useState<any[]>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('furrow_my_crops');
       if (saved) {
         try {
-          return JSON.parse(saved);
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.length > 0) return parsed;
         } catch (e) {
           console.error(e);
         }
       }
     }
-    return INITIAL_CROP_LOTS;
+    return [];
   });
+
+  // Sync directly with Supabase Database via /api/crops
+  useEffect(() => {
+    async function syncSupabaseCrops() {
+      try {
+        const res = await fetch('/api/crops');
+        const json = await res.json();
+        if (json && json.data && Array.isArray(json.data) && json.data.length > 0) {
+          const dbLots = json.data.map((c: any) => {
+            const name = c.crop_type || c.cropType || 'Organic Crop Batch';
+            const isDates = name.toLowerCase().includes('date') || name.toLowerCase().includes('sukari');
+            const isTomatoes = name.toLowerCase().includes('tomato');
+            const isWheat = name.toLowerCase().includes('wheat');
+            const isOlives = name.toLowerCase().includes('olive');
+
+            let defaultImg = 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=800&auto=format&fit=crop&q=80';
+            if (isDates) defaultImg = 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=800&auto=format&fit=crop&q=80';
+            if (isWheat) defaultImg = 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=800&auto=format&fit=crop&q=80';
+            if (isOlives) defaultImg = 'https://images.unsplash.com/photo-1541256942802-7b29531f0df8?w=800&auto=format&fit=crop&q=80';
+
+            return {
+              id: `LOT-${c.id || Math.floor(1000 + Math.random() * 9000)}`,
+              dbId: c.id,
+              name: name,
+              category: isDates ? 'Dates' : isTomatoes ? 'Vegetables' : isWheat ? 'Grains' : isOlives ? 'Olives' : 'Vegetables',
+              quantity: c.quantity || '5.0 Tons',
+              aiGrade: c.aiGrade || (c.status === 'Registered' ? 'Grade A+ (98.6%)' : 'Grade A+ (99.2%)'),
+              reservePrice: c.reservePrice || (isDates ? '$4,500' : '$1,200'),
+              currentBid: c.currentBid || (isDates ? '$6,200' : '$1,580'),
+              bidsCount: c.bidsCount || (isDates ? 22 : 14),
+              status: c.status || 'Active Auction',
+              txHash: c.metadata_hash ? `${c.metadata_hash.substring(0, 6)}...${c.metadata_hash.substring(c.metadata_hash.length - 4)}` : '0x7a8f...92c1',
+              image: c.image || defaultImg,
+            };
+          });
+
+          setMyCropLots((prev) => {
+            // Keep user created crops that might be in local state and merge with DB lots
+            const userOnly = prev.filter((p) => !dbLots.some((d: any) => d.id === p.id || d.name === p.name));
+            const merged = [...userOnly, ...dbLots];
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('furrow_my_crops', JSON.stringify(merged));
+            }
+            return merged;
+          });
+        }
+      } catch (err) {
+        console.error('Error syncing Supabase crops:', err);
+      }
+    }
+    syncSupabaseCrops();
+  }, []);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
