@@ -104,7 +104,23 @@ export default function AuctionsView({ showToast }: AuctionsViewProps) {
     { label: 'Avg. Auction Margin', value: '+31.4%', subtext: 'Above farmer reserve price', icon: HiOutlineStar },
   ];
 
-  const selectedAuction = liveAuctions.find((a) => a.id === activeAuctionId) || liveAuctions[0];
+  const fallbackAuction = {
+    id: 'LOT-EMPTY',
+    name: 'No Active Auctions',
+    quantity: '0 Tons',
+    aiGrade: 'Grade A+',
+    reservePrice: '$0 / Ton',
+    currentBid: '$0 / Ton',
+    topBidder: 'None',
+    location: 'N/A',
+    bidsCount: 0,
+    timeLeft: 'N/A',
+    isExpiringSoon: false,
+    image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=500&auto=format&fit=crop&q=80',
+    bidsHistory: [],
+  };
+
+  const selectedAuction = liveAuctions.find((a) => a.id === activeAuctionId) || liveAuctions[0] || fallbackAuction;
 
   const handleOpenCounterModal = (cropName: string, currentBidPrice: string) => {
     setCounterTargetCrop(cropName);
