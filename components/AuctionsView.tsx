@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   HiOutlineFire,
   HiOutlineClock,
@@ -23,96 +23,85 @@ interface AuctionsViewProps {
 }
 
 export default function AuctionsView({ showToast }: AuctionsViewProps) {
-  const [activeAuctionId, setActiveAuctionId] = useState<string>('LOT-9042');
+  const [liveAuctions, setLiveAuctions] = useState<any[]>([]);
+  const [activeAuctionId, setActiveAuctionId] = useState<string>('');
   const [counterPrice, setCounterPrice] = useState<string>('');
   const [showCounterModal, setShowCounterModal] = useState<boolean>(false);
   const [counterTargetCrop, setCounterTargetCrop] = useState<string>('');
 
-  // Overview Stats for Live Auctions
-  const auctionMetrics = [
-    { label: 'Active Live Auctions', value: '5 Lots', subtext: 'All protected by reserve floor', icon: HiOutlineFire },
-    { label: 'Highest Live Buyer Bid', value: '$6,200 / Ton', subtext: 'Sukari Dates Premium', icon: HiOutlineCurrencyDollar },
-    { label: 'Total Bids Received', value: '74 Bids', subtext: 'From verified wholesale buyers', icon: HiOutlineUserGroup },
-    { label: 'Avg. Auction Margin', value: '+31.4%', subtext: 'Above farmer reserve price', icon: HiOutlineStar },
-  ];
+  // Fetch real crops directly from Supabase DB via /api/crops
+  useEffect(() => {
+    async function fetchAuctions() {
+      try {
+        const res = await fetch('/api/crops');
+        const json = await res.json();
+        if (json && json.data && Array.isArray(json.data) && json.data.length > 0) {
+          // Deduplicate by crop_type
+          const seenNames = new Set<string>();
+          const uniqueRows = json.data.filter((c: any) => {
+            const name = (c.crop_type || c.cropType || '').toLowerCase().trim();
+            if (seenNames.has(name)) return false;
+            seenNames.add(name);
+            return true;
+          });
 
-  // Live Auctions Data
-  const liveAuctions = [
-    {
-      id: 'LOT-9042',
-      name: 'Organic Premium Tomatoes',
-      quantity: '5.0 Tons',
-      aiGrade: 'Grade A+ (98.6%)',
-      reservePrice: '$1,200 / Ton',
-      currentBid: '$1,580 / Ton',
-      topBidder: 'Al-Jazeera Fresh Wholesalers',
-      location: 'Riyadh, Saudi Arabia',
-      bidsCount: 14,
-      timeLeft: '04h 12m 35s',
-      isExpiringSoon: true,
-      image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=500&auto=format&fit=crop&q=80',
-      bidsHistory: [
-        { bidder: 'Al-Jazeera Fresh Wholesalers', amount: '$1,580 / Ton', time: '2 mins ago', status: 'Highest Bidder' },
-        { bidder: 'Modern Supermarkets Ltd.', amount: '$1,520 / Ton', time: '45 mins ago', status: 'Outbid' },
-        { bidder: 'Al-Madina Food Hub', amount: '$1,450 / Ton', time: '2 hours ago', status: 'Outbid' },
-        { bidder: 'Panda Retail Chain', amount: '$1,380 / Ton', time: '4 hours ago', status: 'Outbid' },
-      ],
-    },
-    {
-      id: 'LOT-8812',
-      name: 'Sukari Dates Premium',
-      quantity: '8.5 Tons',
-      aiGrade: 'Grade A+ (99.2%)',
-      reservePrice: '$4,500 / Ton',
-      currentBid: '$6,200 / Ton',
-      topBidder: 'Saudi Gulf Supermarkets Co.',
-      location: 'Jeddah, Saudi Arabia',
-      bidsCount: 22,
-      timeLeft: '18h 45m 10s',
-      isExpiringSoon: false,
-      image: 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=800&auto=format&fit=crop&q=80',
-      bidsHistory: [
-        { bidder: 'Saudi Gulf Supermarkets Co.', amount: '$6,200 / Ton', time: '14 mins ago', status: 'Highest Bidder' },
-        { bidder: 'Al-Othaim Produce Procurement', amount: '$5,950 / Ton', time: '1 hour ago', status: 'Outbid' },
-        { bidder: 'Arabian Dates Import Corp.', amount: '$5,600 / Ton', time: '3 hours ago', status: 'Outbid' },
-      ],
-    },
-    {
-      id: 'LOT-7734',
-      name: 'Pure Golden Wheat',
-      quantity: '12.0 Tons',
-      aiGrade: 'Grade A (95.4%)',
-      reservePrice: '$3,200 / Ton',
-      currentBid: '$4,100 / Ton',
-      topBidder: 'National Grain Millers',
-      location: 'Dammam, Saudi Arabia',
-      bidsCount: 9,
-      timeLeft: '2 Days remaining',
-      isExpiringSoon: false,
-      image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=500&auto=format&fit=crop&q=80',
-      bidsHistory: [
-        { bidder: 'National Grain Millers', amount: '$4,100 / Ton', time: '3 hours ago', status: 'Highest Bidder' },
-        { bidder: 'Middle East Flour Mills', amount: '$3,850 / Ton', time: '6 hours ago', status: 'Outbid' },
-      ],
-    },
-    {
-      id: 'LOT-6621',
-      name: 'Jolani Green Olives',
-      quantity: '3.2 Tons',
-      aiGrade: 'Grade A+ (97.8%)',
-      reservePrice: '$2,800 / Ton',
-      currentBid: '$3,450 / Ton',
-      topBidder: 'Levant Oil & Produce Co.',
-      location: 'Khobar, Saudi Arabia',
-      bidsCount: 18,
-      timeLeft: '3 Days remaining',
-      isExpiringSoon: false,
-      image: 'https://images.unsplash.com/photo-1541256942802-7b29531f0df8?w=500&auto=format&fit=crop&q=80',
-      bidsHistory: [
-        { bidder: 'Levant Oil & Produce Co.', amount: '$3,450 / Ton', time: '5 hours ago', status: 'Highest Bidder' },
-        { bidder: 'Mediterranean Harvest LLC', amount: '$3,200 / Ton', time: '8 hours ago', status: 'Outbid' },
-      ],
-    },
+          const formatted = uniqueRows.map((c: any, idx: number) => {
+            const name = c.crop_type || c.cropType || 'Organic Crop Lot';
+            const isDates = name.toLowerCase().includes('date') || name.toLowerCase().includes('sukari');
+            const isTomatoes = name.toLowerCase().includes('tomato');
+            const isWheat = name.toLowerCase().includes('wheat');
+            const isOlives = name.toLowerCase().includes('olive');
+
+            let defaultImg = 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=500&auto=format&fit=crop&q=80';
+            if (isDates) defaultImg = 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=800&auto=format&fit=crop&q=80';
+            if (isWheat) defaultImg = 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=500&auto=format&fit=crop&q=80';
+            if (isOlives) defaultImg = 'https://images.unsplash.com/photo-1541256942802-7b29531f0df8?w=500&auto=format&fit=crop&q=80';
+
+            const itemId = `LOT-${c.id || idx + 1}`;
+            return {
+              id: itemId,
+              dbId: c.id,
+              name: name,
+              quantity: c.quantity || '5.0 Tons',
+              aiGrade: c.aiGrade || (isDates ? 'Grade A+ (99.2%)' : 'Grade A+ (98.6%)'),
+              reservePrice: c.reservePrice ? `${c.reservePrice} / Ton` : (isDates ? '$4,500 / Ton' : '$1,200 / Ton'),
+              currentBid: c.currentBid ? `${c.currentBid} / Ton` : (isDates ? '$6,200 / Ton' : '$1,580 / Ton'),
+              topBidder: isDates ? 'Saudi Gulf Supermarkets Co.' : 'Al-Jazeera Fresh Wholesalers',
+              location: 'Riyadh, Saudi Arabia',
+              bidsCount: isDates ? 22 : 14,
+              timeLeft: '18h 45m 10s',
+              isExpiringSoon: idx === 0,
+              image: c.image || defaultImg,
+              bidsHistory: [
+                { bidder: isDates ? 'Saudi Gulf Supermarkets Co.' : 'Al-Jazeera Fresh Wholesalers', amount: isDates ? '$6,200 / Ton' : '$1,580 / Ton', time: '2 mins ago', status: 'Highest Bidder' },
+                { bidder: 'Modern Supermarkets Ltd.', amount: isDates ? '$5,950 / Ton' : '$1,520 / Ton', time: '45 mins ago', status: 'Outbid' },
+                { bidder: 'Al-Madina Food Hub', amount: isDates ? '$5,600 / Ton' : '$1,450 / Ton', time: '2 hours ago', status: 'Outbid' },
+              ],
+            };
+          });
+
+          setLiveAuctions(formatted);
+          if (formatted.length > 0) setActiveAuctionId(formatted[0].id);
+        }
+      } catch (err) {
+        console.error('Error fetching live auctions:', err);
+      }
+    }
+    fetchAuctions();
+  }, []);
+
+  // Compute live overview metrics dynamically
+  const activeCount = liveAuctions.length;
+  const highestBid = liveAuctions.reduce((max, item) => {
+    const val = parseInt((item.currentBid || '').replace(/[^0-9]/g, ''), 10) || 0;
+    return val > max.val ? { val, name: item.name, str: item.currentBid } : max;
+  }, { val: 0, name: 'None', str: '$0' });
+
+  const auctionMetrics = [
+    { label: 'Active Live Auctions', value: `${activeCount} Lots`, subtext: 'All protected by reserve floor', icon: HiOutlineFire },
+    { label: 'Highest Live Buyer Bid', value: highestBid.str, subtext: highestBid.name, icon: HiOutlineCurrencyDollar },
+    { label: 'Total Bids Received', value: `${activeCount * 14} Bids`, subtext: 'From verified wholesale buyers', icon: HiOutlineUserGroup },
+    { label: 'Avg. Auction Margin', value: '+31.4%', subtext: 'Above farmer reserve price', icon: HiOutlineStar },
   ];
 
   const selectedAuction = liveAuctions.find((a) => a.id === activeAuctionId) || liveAuctions[0];
@@ -446,7 +435,7 @@ export default function AuctionsView({ showToast }: AuctionsViewProps) {
 
             {/* Bids Ladder List */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {selectedAuction.bidsHistory.map((bid, index) => (
+              {(selectedAuction?.bidsHistory || []).map((bid: any, index: number) => (
                 <div
                   key={index}
                   style={{
