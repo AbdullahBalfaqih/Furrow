@@ -362,22 +362,29 @@ export default function HarvestView({ onAddNewBatch, showToast }: HarvestViewPro
       localStorage.setItem('furrow_user_crops', JSON.stringify(updated));
     }
 
+    const cropName = editingCrop.name || 'Product';
+    const cropId = editingCrop.id || '';
+    const dbId = editingCrop.dbId;
+    const category = editingCrop.category || 'Vegetables';
+
+    setIsEditModalOpen(false);
+    showToast?.(`✔ Saved product updates for ${cropName} (${cropId})`);
+
+    // Non-blocking background API update
     try {
-      await fetch('/api/crops', {
+      fetch('/api/crops', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          cropType: editingCrop.category || 'Vegetables',
+          dbId: dbId,
+          id: cropId,
+          cropType: cropName,
+          category: category,
           farmerAddress: '0x0388865e1daf2427De6111cf8548ed1871656180',
           harvestDate: new Date().toISOString().split('T')[0],
-          storageCID: `0g-${editingCrop.id.toLowerCase()}-cid`,
-          metadataHash: `0xmeta-${editingCrop.id.toLowerCase()}`,
         }),
-      });
+      }).catch((err) => console.warn('Background crop sync notice:', err));
     } catch (e) {}
-
-    setIsEditModalOpen(false);
-    showToast?.(`✔ Saved product updates for ${editingCrop.name} (${editingCrop.id})`);
   };
 
   const handleDeleteCrop = (id: string) => {
