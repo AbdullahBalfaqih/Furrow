@@ -320,24 +320,26 @@ export default function CreateCropView({ onBack, showToast }: CreateCropViewProp
 
     const farmerAddr = connectedAddress || '0x0388865e1daf2427De6111cf8548ed1871656180';
 
-    // 2. Persist directly to Supabase Cloud Database!
-    try {
-      fetch('/api/crops', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          cropType: cropName,
-          farmerAddress: farmerAddr,
-          harvestDate: new Date().toISOString().split('T')[0],
-          quantity: `${stockQuantity} Tons`,
-          reservePrice: reservePrice ? `$${Number(reservePrice).toLocaleString()}` : (price ? `$${Number(price).toLocaleString()}` : '$1,200'),
-          image: imgUrl,
-          status: saleMode === 'auction' ? 'Active Auction' : 'Registered',
-        }),
-      }).catch((err) => console.warn('Background Supabase insert notice:', err));
-    } catch (err) {
-      console.error('Error inserting crop into Supabase:', err);
-    }
+    // 2. Persist directly to Supabase Cloud Database with await
+    (async () => {
+      try {
+        await fetch('/api/crops', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cropType: cropName,
+            farmerAddress: farmerAddr,
+            harvestDate: new Date().toISOString().split('T')[0],
+            quantity: `${stockQuantity} Tons`,
+            reservePrice: reservePrice ? `$${Number(reservePrice).toLocaleString()}` : (price ? `$${Number(price).toLocaleString()}` : '$1,200'),
+            image: imgUrl,
+            status: saleMode === 'auction' ? 'Active Auction' : 'Registered',
+          }),
+        });
+      } catch (err) {
+        console.error('Error inserting crop into Supabase:', err);
+      }
+    })();
 
     // 3. Save created product to localStorage for instant UI feedback
     const newCrop = {

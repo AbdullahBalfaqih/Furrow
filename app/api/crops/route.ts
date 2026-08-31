@@ -31,16 +31,7 @@ export async function GET(req: NextRequest) {
     const { data: cloudCrops, error } = await query;
 
     if (!error && cloudCrops) {
-      // Deduplicate server-side by crop_type (keep first occurrence)
-      const seenNames = new Set<string>();
-      const uniqueCrops = cloudCrops.filter((c: any) => {
-        const name = (c.crop_type || '').toLowerCase().trim();
-        if (seenNames.has(name)) return false;
-        seenNames.add(name);
-        return true;
-      });
-
-      const response = NextResponse.json({ success: true, count: uniqueCrops.length, data: uniqueCrops });
+      const response = NextResponse.json({ success: true, count: cloudCrops.length, data: cloudCrops });
       return applySecurityHeaders(response);
     }
   } catch (e) {

@@ -189,16 +189,7 @@ export default function HarvestView({ onAddNewBatch, showToast }: HarvestViewPro
         const res = await fetch(url);
         const json = await res.json();
         if (json && json.data && Array.isArray(json.data) && json.data.length > 0) {
-          // Deduplicate by crop_type — keep only the first occurrence of each crop name
-          const seenNames = new Set<string>();
-          const uniqueRows = json.data.filter((c: any) => {
-            const name = (c.crop_type || c.cropType || '').toLowerCase().trim();
-            if (seenNames.has(name)) return false;
-            seenNames.add(name);
-            return true;
-          });
-
-          const dbLots = uniqueRows.map((c: any) => {
+          const dbLots = json.data.map((c: any) => {
             const name = c.crop_type || c.cropType || 'Organic Crop Batch';
             const isDates = name.toLowerCase().includes('date') || name.toLowerCase().includes('sukari');
             const isTomatoes = name.toLowerCase().includes('tomato');
