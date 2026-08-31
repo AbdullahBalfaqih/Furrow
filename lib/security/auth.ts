@@ -6,13 +6,15 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { SiweMessage } from 'siwe';
 
-const jwtSecretValue = process.env.JWT_SECRET;
-if (!jwtSecretValue && process.env.NODE_ENV === 'production') {
-  throw new Error('FATAL: JWT_SECRET environment variable is not set in production!');
+
+
+function getJwtSecret(): Uint8Array {
+  const secret = process.env.JWT_SECRET;
+  if (!secret && process.env.NODE_ENV === 'production') {
+    throw new Error('FATAL: JWT_SECRET environment variable is not set in production!');
+  }
+  return new TextEncoder().encode(secret || 'furrow-dev-only-secret-do-not-use-in-production');
 }
-const JWT_SECRET = new TextEncoder().encode(
-  jwtSecretValue || 'furrow-dev-only-secret-do-not-use-in-production'
-);
 
 export interface JWTPayload {
   address: string;
@@ -80,7 +82,7 @@ export async function issueJwtToken(
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('24h')
-    .sign(JWT_SECRET);
+    .sign(getJwtSecret());
 }
 
 /**
@@ -88,7 +90,7 @@ export async function issueJwtToken(
  */
 export async function verifyJwtToken(token: string): Promise<JWTPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const { payload } = await jwtVerify(token, getJwtSecret());
     return payload as unknown as JWTPayload;
   } catch (err) {
     return null;
