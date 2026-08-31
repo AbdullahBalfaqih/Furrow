@@ -39,33 +39,64 @@ export function Navbar() {
     return null;
   });
 
+  // Properly detect MetaMask / injected wallet connection using eth_accounts (async)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('furrow_connected_address') || getCookie('furrow_session');
-      if (saved) {
-        setInjectedAddress(saved);
-      }
+    if (typeof window === 'undefined') return;
 
-      const win = window as any;
-      const eth = win.phantom?.ethereum || win.ethereum;
-      if (eth) {
+    // Restore from session first
+    const saved = localStorage.getItem('furrow_connected_address') || getCookie('furrow_session');
+    if (saved) setInjectedAddress(saved);
+
+    const win = window as any;
+    const eth = win.phantom?.ethereum || win.ethereum;
+    if (!eth) return;
+
+    // eth_accounts returns already-connected accounts without prompting the user
+    const checkAccounts = async () => {
+      try {
+        const accounts: string[] = await eth.request({ method: 'eth_accounts' });
+        if (accounts && accounts.length > 0) {
+          setInjectedAddress(accounts[0]);
+          setSession(accounts[0]);
+        }
+      } catch (e) {
+        // Fallback to selectedAddress if request fails
         if (eth.selectedAddress) {
           setInjectedAddress(eth.selectedAddress);
           setSession(eth.selectedAddress);
         }
-        if (typeof eth.on === 'function') {
-          eth.on('accountsChanged', (accounts: string[]) => {
-            if (accounts && accounts[0]) {
-              setInjectedAddress(accounts[0]);
-              setSession(accounts[0]);
-            } else {
-              setInjectedAddress(null);
-              setSession(null);
-            }
-          });
-        }
       }
+    };
+
+    checkAccounts();
+
+    // Listen for account changes
+    const handleAccountsChanged = (accounts: string[]) => {
+      if (accounts && accounts[0]) {
+        setInjectedAddress(accounts[0]);
+        setSession(accounts[0]);
+      } else {
+        setInjectedAddress(null);
+        setSession(null);
+      }
+    };
+
+    // Listen for connect event
+    const handleConnect = (info: any) => {
+      checkAccounts();
+    };
+
+    if (typeof eth.on === 'function') {
+      eth.on('accountsChanged', handleAccountsChanged);
+      eth.on('connect', handleConnect);
     }
+
+    return () => {
+      if (typeof eth.removeListener === 'function') {
+        eth.removeListener('accountsChanged', handleAccountsChanged);
+        eth.removeListener('connect', handleConnect);
+      }
+    };
   }, []);
 
   const address = appKitAddress || wagmiAddress || injectedAddress;
@@ -77,13 +108,18 @@ export function Navbar() {
     }
   }, [address]);
 
-  const [mounted, setMounted] = useState(false);
+  const [mounted, setMounted] = useState(true);
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
-  const [userRole, setUserRole] = useState<'merchant' | 'buyer' | null>(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const [userRole, setUserRole] = useState<'merchant' | 'buyer' | null>(() => {
+    if (typeof window !== 'undefined') {
+      const addr = localStorage.getItem('furrow_connected_address') || getCookie('furrow_session');
+      if (addr) {
+        const role = localStorage.getItem(`furrow_role_${addr.toLowerCase()}`);
+        return (role as any) || null;
+      }
+    }
+    return null;
+  });
 
   let appkit: any = null;
   try {
@@ -93,10 +129,10 @@ export function Navbar() {
   }
 
   useEffect(() => {
-    if (!mounted || !isConnected || !address) {
-      setUserRole(null);
-      return;
-    }
+    if (!isConnected || !address) return;
+
+    const savedRole = localStorage.getItem(`furrow_role_${address.toLowerCase()}`);
+    if (savedRole) setUserRole(savedRole as any);
 
     try {
       fetch(`/api/users/profile?address=${address}`)
@@ -107,20 +143,11 @@ export function Navbar() {
         .then((data) => {
           if (data && data.success && data.profile && data.profile.role) {
             setUserRole(data.profile.role);
-          } else {
-            const savedRole = localStorage.getItem(`furrow_role_${address.toLowerCase()}`);
-            if (savedRole) setUserRole(savedRole as any);
           }
         })
-        .catch(() => {
-          const savedRole = localStorage.getItem(`furrow_role_${address.toLowerCase()}`);
-          if (savedRole) setUserRole(savedRole as any);
-        });
-    } catch (e) {
-      const savedRole = localStorage.getItem(`furrow_role_${address.toLowerCase()}`);
-      if (savedRole) setUserRole(savedRole as any);
-    }
-  }, [address, isConnected, mounted]);
+        .catch(() => {});
+    } catch (e) {}
+  }, [address, isConnected]);
 
   const handleConnectClick = async () => {
     // 1. IF ALREADY CONNECTED -> DISCONNECT WALLET IMMEDIATELY!
@@ -301,7 +328,7 @@ export function Navbar() {
             transition: 'transform 0.2s, background-color 0.2s',
           }}
         >
-          {mounted && isConnected && address
+          {isConnected && address
             ? `${address.substring(0, 6)}...${address.substring(address.length - 4)}`
             : 'Connect'}
         </button>
