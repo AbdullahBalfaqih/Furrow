@@ -6,8 +6,12 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { SiweMessage } from 'siwe';
 
+const jwtSecretValue = process.env.JWT_SECRET;
+if (!jwtSecretValue && process.env.NODE_ENV === 'production') {
+  throw new Error('FATAL: JWT_SECRET environment variable is not set in production!');
+}
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'furrow-chain-cybersecurity-secret-key-2026-0g-galileo-token-key-prod'
+  jwtSecretValue || 'furrow-dev-only-secret-do-not-use-in-production'
 );
 
 export interface JWTPayload {

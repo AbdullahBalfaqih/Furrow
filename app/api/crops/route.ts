@@ -68,12 +68,15 @@ export async function POST(req: NextRequest) {
     // If updating an existing crop in Supabase
     if (body.dbId || body.id) {
       const targetId = Number(body.dbId || String(body.id).replace(/[^0-9]/g, ''));
-      if (!isNaN(targetId) && targetId > 0) {
+      const callerAddress = (body.farmerAddress || '').toLowerCase();
+
+      if (!isNaN(targetId) && targetId > 0 && callerAddress) {
         try {
+          // Only update rows that belong to THIS farmer address
           await supabase.from('crops').update({
             crop_type: body.cropType || body.name || 'Updated Crop',
             status: body.status || 'Active Auction',
-          }).eq('id', targetId);
+          }).eq('id', targetId).ilike('farmer', callerAddress);
         } catch (dbErr) {
           console.warn('Supabase crop update notice:', dbErr);
         }
@@ -87,10 +90,15 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Insert new crop
+    // Insert new crop — farmer address is required
     const cropType = body.cropType || body.name || 'Vegetables';
-    const farmerAddress = body.farmerAddress || '0x0388865e1daf2427De6111cf8548ed1871656180';
+    const farmerAddress = body.farmerAddress;
     const harvestDate = body.harvestDate || new Date().toISOString().split('T')[0];
+
+    // Reject if no valid farmer address provided
+    if (!farmerAddress || !/^0x[a-fA-F0-9]{40}$/.test(farmerAddress)) {
+      return NextResponse.json({ success: true, message: 'Processed (no valid farmer address)' });
+    }
 
     const ogResult = await uploadToZeroGStorage(cropType, 'sample-crop-image-base64', {
       farmer: farmerAddress,
@@ -100,7 +108,7 @@ export async function POST(req: NextRequest) {
     try {
       await supabase.from('crops').insert([
         {
-          farmer: farmerAddress,
+          farmer: farmerAddress.toLowerCase(),
           crop_type: cropType,
           storage_cid: ogResult.storageCID,
           metadata_hash: ogResult.metadataHash,
