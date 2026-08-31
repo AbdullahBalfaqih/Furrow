@@ -104,188 +104,61 @@ export default function MarketplacePage() {
   // Agricultural Crop Categories
   const categories = ['All', 'Vegetables', 'Dates', 'Grains', 'Olives', 'Fruits'];
 
-  const DEFAULT_ITEMS: MarketplaceItem[] = [
-    {
-      id: 'LOT-9042',
-      title: 'Organic Premium Tomatoes',
-      category: 'Vegetables',
-      cropType: 'Tomatoes',
-      location: 'Riyadh, KSA',
-      quantity: '5.0 Tons',
-      grade: 'Grade A+ (98.6%)',
-      priceNum: 1580,
-      price: '$1,580',
-      reservePrice: '$1,200',
-      bidsCount: 14,
-      saleMode: 'Live Auction',
-      author: '@alrasheed_farm',
-      description: 'Fresh organic hydroponic greenhouse tomatoes certified with Grade A+ quality blockchain certificate.',
-      image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=800&auto=format&fit=crop&q=80',
-      isEndingSoon: true,
-    },
-    {
-      id: 'LOT-8812',
-      title: 'Sukari Dates Premium',
-      category: 'Dates',
-      cropType: 'Dates',
-      location: 'Al-Qassim, KSA',
-      quantity: '8.5 Tons',
-      grade: 'Grade A+ (99.2%)',
-      priceNum: 6200,
-      price: '$6,200',
-      reservePrice: '$4,500',
-      bidsCount: 22,
-      saleMode: 'Live Auction',
-      author: '@qassim_dates_co',
-      description: 'First grade Sukari dates sourced directly from Al-Qassim palm orchards with 99.2% AI score.',
-      image: 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=800&auto=format&fit=crop&q=80',
-      isEndingSoon: false,
-    },
-    {
-      id: 'LOT-7734',
-      title: 'Pure Golden Wheat',
-      category: 'Grains',
-      cropType: 'Wheat',
-      location: 'Dammam, KSA',
-      quantity: '12.0 Tons',
-      grade: 'Grade A (95.4%)',
-      priceNum: 4100,
-      price: '$4,100',
-      reservePrice: '$3,200',
-      bidsCount: 9,
-      saleMode: 'Live Auction',
-      author: '@golden_grains_sa',
-      description: 'High-protein durum golden wheat harvested with automated moisture control and smart contract tracing.',
-      image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=800&auto=format&fit=crop&q=80',
-      isEndingSoon: false,
-    },
-    {
-      id: 'LOT-6621',
-      title: 'Jolani Green Olives',
-      category: 'Olives',
-      cropType: 'Olives',
-      location: 'Jeddah, KSA',
-      quantity: '3.2 Tons',
-      grade: 'Grade A+ (97.8%)',
-      priceNum: 3450,
-      price: '$3,450',
-      reservePrice: '$2,800',
-      bidsCount: 18,
-      saleMode: 'Live Auction',
-      author: '@tabuk_harvest',
-      description: 'Cold-pressed extra virgin green olives packed in stainless food-grade drums.',
-      image: 'https://images.unsplash.com/photo-1541256942802-7b29531f0df8?w=800&auto=format&fit=crop&q=80',
-      isEndingSoon: true,
-    },
-    {
-      id: 'LOT-5510',
-      title: 'Fresh Honeycrisp Apples',
-      category: 'Fruits',
-      cropType: 'Apples',
-      location: 'Riyadh, KSA',
-      quantity: '4.0 Tons',
-      grade: 'Grade A (94.1%)',
-      priceNum: 2250,
-      price: '$2,250',
-      reservePrice: '$1,800',
-      bidsCount: 11,
-      saleMode: 'Direct Buy-Now',
-      author: '@najd_orchards',
-      description: 'Crisp, juicy red apples sorted using computer vision AI grading systems.',
-      image: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=800&auto=format&fit=crop&q=80',
-      isEndingSoon: false,
-    },
-  ];
-
-  // Dynamic Marketplace Items State Synced with Farmer Edits in LocalStorage
-  const [items, setItems] = useState<MarketplaceItem[]>(DEFAULT_ITEMS);
+  // Live Marketplace Items State Synced with Supabase Cloud DB
+  const [items, setItems] = useState<MarketplaceItem[]>([]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const sanitizeImg = (url: string | undefined, defaultUrl: string) => {
-        if (!url) return defaultUrl;
-        if (url.includes('photo-1543332164')) return 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=800&auto=format&fit=crop&q=80';
-        if (url.includes('photo-1540420773')) return 'https://images.unsplash.com/photo-1541256942802-7b29531f0df8?w=800&auto=format&fit=crop&q=80';
-        return url;
-      };
+    async function syncMarketplaceCrops() {
+      try {
+        const res = await fetch('/api/crops');
+        const json = await res.json();
+        if (json && json.data && Array.isArray(json.data) && json.data.length > 0) {
+          const dbItems: MarketplaceItem[] = json.data.map((c: any, idx: number) => {
+            const name = c.crop_type || c.cropType || 'Organic Harvest';
+            const isDates = name.toLowerCase().includes('date') || name.toLowerCase().includes('sukari');
+            const isTomatoes = name.toLowerCase().includes('tomato');
+            const isWheat = name.toLowerCase().includes('wheat');
+            const isOlives = name.toLowerCase().includes('olive');
 
-      const loadSavedCrops = () => {
-        const savedMy = localStorage.getItem('furrow_my_crops');
-        const savedUser = localStorage.getItem('furrow_user_crops');
-        const farmerCrops = [
-          ...(savedMy ? JSON.parse(savedMy) : []),
-          ...(savedUser ? JSON.parse(savedUser) : []),
-        ];
+            let defaultImg = 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=800&auto=format&fit=crop&q=80';
+            if (isDates) defaultImg = 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=800&auto=format&fit=crop&q=80';
+            if (isWheat) defaultImg = 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=800&auto=format&fit=crop&q=80';
+            if (isOlives) defaultImg = 'https://images.unsplash.com/photo-1541256942802-7b29531f0df8?w=800&auto=format&fit=crop&q=80';
 
-        if (farmerCrops.length > 0) {
-          try {
-            setItems((prevItems) => {
-              // 1. Update existing default items with farmer modifications
-              const updatedItems = prevItems.map((item) => {
-                const updated = farmerCrops.find((c: any) => c.id === item.id || c.title === item.title);
-                if (updated) {
-                  const priceCleanNum = parseFloat(updated.currentBid?.replace(/[^0-9.]/g, '') || updated.priceNum || '0') || item.priceNum;
-                  const cleanTitle = (updated.name || updated.title || item.title).replace(/\s*Batch\s*#\d+/gi, '').replace(/#\d+/g, '').trim();
-                  const cleanPrice = updated.currentBid ? updated.currentBid.replace(/\s*\/\s*Ton/gi, '').trim() : (updated.price || item.price);
-                  const cleanReserve = updated.reservePrice ? updated.reservePrice.replace(/\s*\/\s*Ton/gi, '').trim() : item.reservePrice;
-                  return {
-                    ...item,
-                    title: cleanTitle,
-                    category: updated.category || item.category,
-                    quantity: updated.quantity || item.quantity,
-                    grade: updated.aiGrade || item.grade,
-                    price: cleanPrice,
-                    priceNum: priceCleanNum,
-                    reservePrice: cleanReserve,
-                    image: sanitizeImg(updated.image, item.image),
-                  };
-                }
-                return {
-                  ...item,
-                  image: sanitizeImg(item.image, item.image),
-                };
-              });
+            const cleanPrice = c.reservePrice ? c.reservePrice : (isDates ? '$6,200' : '$1,580');
+            const priceNum = parseFloat(cleanPrice.replace(/[^0-9.]/g, '')) || 1580;
 
-              // 2. Append any brand new crops created by farmer
-              const newCrops = farmerCrops.filter((c: any) => c.id && !updatedItems.some((it) => it.id === c.id));
-              const formattedNew: MarketplaceItem[] = newCrops.map((c: any) => {
-                const priceCleanNum = parseFloat(c.currentBid?.replace(/[^0-9.]/g, '') || c.priceNum || '0') || 1500;
-                const cleanTitle = (c.name || c.title || 'Organic Harvest').replace(/\s*Batch\s*#\d+/gi, '').replace(/#\d+/g, '').trim();
-                const cleanPrice = c.currentBid ? c.currentBid.replace(/\s*\/\s*Ton/gi, '').trim() : (c.price || '$1,500');
-                const cleanReserve = c.reservePrice ? c.reservePrice.replace(/\s*\/\s*Ton/gi, '').trim() : '$1,200';
-                return {
-                  id: c.id,
-                  title: cleanTitle,
-                  category: c.category || 'Vegetables',
-                  cropType: c.category || 'Crops',
-                  location: c.location || 'Al-Qassim, KSA',
-                  quantity: c.quantity || '1.0 Ton',
-                  grade: c.aiGrade || c.grade || 'Grade A+ (98%)',
-                  priceNum: priceCleanNum,
-                  price: cleanPrice,
-                  reservePrice: cleanReserve,
-                  bidsCount: c.bidsCount || 0,
-                  saleMode: c.saleMode || 'Live Auction',
-                  author: '@my_farm',
-                  description: c.description || `Fresh ${cleanTitle} registered directly from farm on 0G Chain.`,
-                  image: sanitizeImg(c.image, 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?w=800&auto=format&fit=crop&q=80'),
-                  isEndingSoon: false,
-                };
-              });
+            return {
+              id: `LOT-${c.id}`,
+              title: name,
+              category: isDates ? 'Dates' : isTomatoes ? 'Vegetables' : isWheat ? 'Grains' : isOlives ? 'Olives' : 'Vegetables',
+              cropType: name,
+              location: 'Al-Qassim, KSA',
+              quantity: c.quantity || '5.0 Tons',
+              grade: c.aiGrade || (isDates ? 'Grade A+ (99.2%)' : 'Grade A+ (98.6%)'),
+              priceNum: priceNum,
+              price: cleanPrice,
+              reservePrice: c.reservePrice || (isDates ? '$4,500' : '$1,200'),
+              bidsCount: c.bidsCount || (isDates ? 22 : 14),
+              saleMode: c.status === 'Active Auction' ? 'Live Auction' : 'Direct Buy-Now',
+              author: c.farmer ? `@${c.farmer.substring(0, 6)}...${c.farmer.substring(c.farmer.length - 4)}` : '@farm_owner',
+              description: `Fresh ${name} registered directly from farm on 0G Chain.`,
+              image: c.image || defaultImg,
+              isEndingSoon: idx === 0,
+            };
+          });
 
-              // Prepend newly created user crops so they appear first!
-              return [...formattedNew, ...updatedItems];
-            });
-          } catch (e) {
-            console.error('Error parsing crops in Marketplace:', e);
-          }
+          setItems(dbItems);
+        } else {
+          setItems([]);
         }
-      };
-
-      loadSavedCrops();
-      window.addEventListener('storage', loadSavedCrops);
-      return () => window.removeEventListener('storage', loadSavedCrops);
+      } catch (err) {
+        console.error('Error fetching Supabase crops in Marketplace:', err);
+        setItems([]);
+      }
     }
+
+    syncMarketplaceCrops();
   }, []);
 
 
