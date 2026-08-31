@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { useAccount } from 'wagmi';
+import { useAppKitAccount } from '@reown/appkit/react';
 import {
   HiOutlinePlus,
   HiOutlineSparkles,
@@ -158,6 +160,13 @@ const PRESET_CROP_IMAGES = [
 ];
 
 export default function HarvestView({ onAddNewBatch, showToast }: HarvestViewProps) {
+  const { address: wagmiAddress } = useAccount();
+  const { address: appKitAddress } = useAppKitAccount();
+
+  // Resolved connected wallet address (farmer)
+  const connectedAddress = appKitAddress || wagmiAddress
+    || (typeof window !== 'undefined' ? localStorage.getItem('furrow_connected_address') || '' : '');
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
@@ -168,8 +177,16 @@ export default function HarvestView({ onAddNewBatch, showToast }: HarvestViewPro
   // Sync directly with Supabase Database via /api/crops (single source of truth)
   useEffect(() => {
     async function syncSupabaseCrops() {
+      // Get connected wallet address to filter only this farmer's crops
+      const address = appKitAddress || wagmiAddress
+        || (typeof window !== 'undefined' ? localStorage.getItem('furrow_connected_address') || '' : '');
+
+      const url = address
+        ? `/api/crops?farmer=${encodeURIComponent(address)}`
+        : '/api/crops';
+
       try {
-        const res = await fetch('/api/crops');
+        const res = await fetch(url);
         const json = await res.json();
         if (json && json.data && Array.isArray(json.data) && json.data.length > 0) {
           // Deduplicate by crop_type — keep only the first occurrence of each crop name

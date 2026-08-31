@@ -16,10 +16,31 @@ export async function GET(req: NextRequest) {
   const rateLimitError = enforceRateLimit(ip, { limit: 100, windowMs: 60 * 1000 });
   if (rateLimitError) return rateLimitError;
 
+  // Optional: filter by farmer wallet address via ?farmer=0x...
+  const { searchParams } = new URL(req.url);
+  const farmerFilter = searchParams.get('farmer')?.toLowerCase().trim();
+
   try {
-    const { data: cloudCrops, error } = await supabase.from('crops').select('*');
-    if (!error && cloudCrops && cloudCrops.length > 0) {
-      const response = NextResponse.json({ success: true, count: cloudCrops.length, data: cloudCrops });
+    let query = supabase.from('crops').select('*');
+
+    // Filter by farmer if provided
+    if (farmerFilter) {
+      query = query.ilike('farmer', farmerFilter);
+    }
+
+    const { data: cloudCrops, error } = await query;
+
+    if (!error && cloudCrops) {
+      // Deduplicate server-side by crop_type (keep first occurrence)
+      const seenNames = new Set<string>();
+      const uniqueCrops = cloudCrops.filter((c: any) => {
+        const name = (c.crop_type || '').toLowerCase().trim();
+        if (seenNames.has(name)) return false;
+        seenNames.add(name);
+        return true;
+      });
+
+      const response = NextResponse.json({ success: true, count: uniqueCrops.length, data: uniqueCrops });
       return applySecurityHeaders(response);
     }
   } catch (e) {
