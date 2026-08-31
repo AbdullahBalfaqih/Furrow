@@ -349,17 +349,38 @@ export default function HarvestView({ onAddNewBatch, showToast }: HarvestViewPro
 
   const openEditModal = (crop: any) => {
     setEditingCrop({ ...crop });
+    setPreviewBase64(null); // Reset preview when opening a new crop
     setIsEditModalOpen(true);
   };
 
   const handleSaveCrop = async () => {
     if (!editingCrop) return;
-    const updated = myCropLots.map((c) => (c.id === editingCrop.id ? editingCrop : c));
-    setMyCropLots(updated);
 
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('furrow_my_crops', JSON.stringify(updated));
-      localStorage.setItem('furrow_user_crops', JSON.stringify(updated));
+    // If user uploaded a local file (previewBase64), DON'T save base64 to localStorage
+    // — instead keep the original URL from editingCrop.image (which might have been manually typed)
+    // Strip any base64 data URLs before persisting to avoid localStorage quota crash
+    const safeImage = editingCrop.image && !editingCrop.image.startsWith('data:')
+      ? editingCrop.image
+      : (editingCrop._originalImage || 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=500&auto=format&fit=crop&q=80');
+
+    const cropToSave = { ...editingCrop, image: safeImage };
+    const updated = myCropLots.map((c) => (c.id === editingCrop.id ? cropToSave : c));
+    setMyCropLots(updated);
+    setPreviewBase64(null);
+
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('furrow_my_crops', JSON.stringify(updated));
+        localStorage.setItem('furrow_user_crops', JSON.stringify(updated));
+      }
+    } catch (storageErr) {
+      console.warn('localStorage quota issue - clearing old data:', storageErr);
+      // If localStorage is full, clear it and try again with just this crop
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('furrow_my_crops');
+        localStorage.removeItem('furrow_user_crops');
+        localStorage.setItem('furrow_my_crops', JSON.stringify(updated));
+      }
     }
 
     const cropName = editingCrop.name || 'Product';
@@ -407,15 +428,25 @@ export default function HarvestView({ onAddNewBatch, showToast }: HarvestViewPro
     showToast?.('🧹 Cleared all default products! You now have a clean slate to add your own.');
   };
 
+  // NOTE: We store base64 in state ONLY for live preview inside the modal.
+  // We NEVER persist base64 to localStorage (it can exceed the 5MB quota and crash the page).
+  const [previewBase64, setPreviewBase64] = useState<string | null>(null);
+
   const handleFileUploadInModal = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && editingCrop) {
+      // Validate: only allow images under 2MB to avoid huge base64 strings
+      if (file.size > 2 * 1024 * 1024) {
+        showToast?.('⚠ Image too large. Please use a URL link or pick a preset image instead.');
+        return;
+      }
       const reader = new FileReader();
       reader.onload = (uploadEvent) => {
         const result = uploadEvent.target?.result as string;
         if (result) {
-          setEditingCrop((prev: any) => ({ ...prev, image: result }));
-          showToast?.('✔ Custom crop photo uploaded successfully');
+          // Keep base64 only in local state for live preview — do NOT store in editingCrop.image
+          setPreviewBase64(result);
+          showToast?.('✔ Photo preview ready — click Save to apply changes');
         }
       };
       reader.readAsDataURL(file);
@@ -941,14 +972,14 @@ export default function HarvestView({ onAddNewBatch, showToast }: HarvestViewPro
               {/* Current Image Preview & Upload Controls */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                 <img
-                  src={editingCrop.image}
+                  src={previewBase64 || editingCrop.image}
                   alt={editingCrop.name}
                   style={{
                     width: '94px',
                     height: '94px',
                     borderRadius: '14px',
                     objectFit: 'cover',
-                    border: '2px solid #FFFFFF',
+                    border: previewBase64 ? '3px solid #16a34a' : '2px solid #FFFFFF',
                     boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
                     flexShrink: 0,
                   }}
@@ -987,7 +1018,11 @@ export default function HarvestView({ onAddNewBatch, showToast }: HarvestViewPro
                     <span>Upload Custom Photo</span>
                   </button>
 
-                  <div style={{ fontSize: '11px', color: '#6B7280' }}>Select an image file from your computer or paste a URL below:</div>
+                  <div style={{ fontSize: '11px', color: previewBase64 ? '#16a34a' : '#6B7280' }}>
+                    {previewBase64
+                      ? '✔ Photo preview ready! Paste a URL below or pick a preset to save permanently.'
+                      : 'Select an image file (preview only) or paste a URL below to save:'}
+                  </div>
                 </div>
               </div>
 
